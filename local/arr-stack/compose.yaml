@@ -14,6 +14,10 @@
 # Wizarr: 5690
 # Profilarr: 6869
 
+secrets:
+  op_token:
+    file: /etc/op/token
+
 services:
   locket:
     image: ghcr.io/bpbradley/locket:latest
@@ -212,6 +216,7 @@ services:
       - type: volume
         source: locket-arrstack
         target: /app/src/scraparr/config/config.yaml
+        read_only: true
         volume:
           subpath: scraparr/config.yaml
     ports:
