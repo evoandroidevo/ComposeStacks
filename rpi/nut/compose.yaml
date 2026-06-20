@@ -1,0 +1,43 @@
+services:
+  locket:
+      image: ghcr.io/bpbradley/locket:op
+      user: "65532:65532"
+      container_name: locket-nut
+      security_opt:
+        - no-new-privileges:true
+      cap_drop:
+        - ALL
+  command:
+      - "--provider=op"
+      - "--mode=exit"
+      - "--inject-failure-policy=error"
+      - "--op-token=file:/run/secrets/op_token"
+
+  nut:
+    image: instantlinux/nut-upsd:latest
+    container_name: nut
+    restart: always
+    environment:
+      NUT_DEBUG_LEVEL: 0
+    ports:
+    - 3493:3493
+    volumes:
+    - nut-data:/etc/nut/local
+
+  peanut:
+    image: brandawg93/peanut:latest
+    container_name: PeaNUT
+    restart: unless-stopped
+    volumes:
+      - /media/usb/docker/peanut:/config
+    ports:
+      - 8080:8080
+    environment:
+      - WEB_PORT=8080
+
+  secrets:
+    - op_token
+
+volumes:
+  nut-data:
+    driver: local
