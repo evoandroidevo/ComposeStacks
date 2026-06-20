@@ -24,16 +24,19 @@ services:
     image: fnsys/dockhand:latest
     container_name: dockhand
     restart: unless-stopped
+    # Override the default entrypoint to load the encryption key from the secret file into an environment variable without writing
+    # them to disk, then exec the original entrypoint
+    # https://github.com/Finsys/dockhand/blob/main/Dockerfile
     entrypoint:
-      ['/sbin/tini', '--', '/init.sh -f /run/secrets/locket/encryption_key']
-    cmd: ['/usr/local/bin/docker-entrypoint.sh']
+      ['/sbin/tini', '--', '/init.sh -f /run/secretsDH/locket/encryption_key']
+    command: ['/bin/sh', '/usr/local/bin/docker-entrypoint.sh']
     group_add:
       - 999 #docker group
     ports:
       - '3000:3000'
     volumes:
       - ../../common/scripts/init.sh:/init.sh:ro
-      - secrets-store-dockhand:/run/secrets/locket
+      - secrets-store-dockhand:/run/secrets/locketDH
       - /var/run/docker.sock:/var/run/docker.sock
       - /app/data:/app/data
     environment:

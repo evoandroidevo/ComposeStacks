@@ -33,22 +33,25 @@ services:
       locket:
         condition: service_completed_successfully
     container_name: authdb
-    entrypoint: ['init.sh -f /config/.env']
-    cmd: [docker-entrypoint.sh, postgres]
+    # Override the default entrypoint to run our init script first, which will populate the environment variables from the secrets without
+    # writing them to disk, then exec the original entrypoint
+    # https://github.com/docker-library/postgres/blob/master/15/alpine3.24/Dockerfile
+    entrypoint: ['/init.sh -f /config/.env']
+    command: ['/bin/sh', 'docker-entrypoint.sh', 'postgres']
     expose:
       - 5432
     restart: unless-stopped
     volumes:
-      initenv:
-        type: bind
+      - type: bind
         source: ../../common/scripts/init.sh
         target: /init.sh
-      secrets-store-auth:
+        read_only: true
+      - type: volume
         source: secrets-store-auth
         target: /config
         volume:
           subpath: postgres
-      authdb-git:
+      - type: volume
         source: authdb-git
         target: /var/lib/postgresql/data
     healthcheck:
@@ -71,14 +74,14 @@ services:
       - 3890
     restart: unless-stopped
     volumes:
-      secrets-store-auth:
+      - type: volume
+        source: lldap-git
+        target: /data
+      - type: volume
         source: secrets-store-auth
         target: /config
         volume:
           subpath: lldap
-      lldap-git:
-        source: lldap-git
-        target: /data
     environment:
       UID: 1000
       GID: 1000
@@ -92,7 +95,7 @@ services:
       authelia-db:
         condition: service_healthy
       redis:
-        required: false
+        condition: service_healthy
       lldap:
         condition: service_healthy
     container_name: authelia
@@ -100,7 +103,7 @@ services:
       - 9091:9091
     restart: unless-stopped
     volumes:
-      secrets-store-auth:
+      - type: volume
         source: secrets-store-auth
         target: /config
         volume:
@@ -123,6 +126,11 @@ services:
       TZ: America/Chicago
       PUID: 1000
       PGID: 1000
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 secrets:
   op_token:
