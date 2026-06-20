@@ -1,0 +1,47 @@
+services:
+  locket:
+    image: ghcr.io/bpbradley/locket:op
+    user: '65532:65532'
+    container_name: locket-auth
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    command:
+      - '--provider=op'
+      - '--mode=exit'
+      - '--inject-failure-policy=error'
+      - '--op-token=file:/run/secrets/op_token'
+      - '--secret=encryption_key={{ op://DockerSecrets/authdb/encryption_key }}'
+    secrets:
+      - op_token
+    volumes:
+      - secrets-store-auth:/run/secrets/locket
+
+  dockhand:
+    image: fnsys/dockhand:latest
+    container_name: dockhand
+    restart: unless-stopped
+    entrypoint:
+      [
+        'loadenvkey.sh',
+        '/sbin/tini',
+        '--',
+        '/usr/local/bin/docker-entrypoint.sh',
+      ]
+    group_add:
+      - 999 #docker group
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./loadenvkey.sh:/loadenvkey.sh:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /app/data:/app/data
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Chicago
+
+secrets:
+  op_token:
+    file: /etc/op/token
