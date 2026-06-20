@@ -16,7 +16,7 @@ services:
     secrets:
       - op_token
     volumes:
-      - secrets-store-auth:/run/secrets/locket
+      - secrets-store-dockhand:/run/secrets/locket
 
   dockhand:
     image: fnsys/dockhand:latest
@@ -45,3 +45,10 @@ services:
 secrets:
   op_token:
     file: /etc/op/token
+
+volumes:
+  secrets-store-dockhand:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
