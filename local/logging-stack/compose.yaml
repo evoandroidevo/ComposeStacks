@@ -1,0 +1,109 @@
+services:
+  locket:
+    image: ghcr.io/bpbradley/locket:op
+    user: "65532:65532"
+    container_name: locket-auth
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    command:
+      - "--provider=op"
+      - "--mode=exit"
+      - "--inject-failure-policy=error"
+      - "--op-token=file:/run/secrets/op_token"
+      - "--secret=gf_admin_user={{ op://DockerSecrets/authdb/db }}"
+      - "--secret=gf_admin_pw={{ op://DockerSecrets/authdb/db }}"
+      - "--secret=influxdb_username={{ op://DockerSecrets/authdb/username }}"
+      - "--secret=influxdb_password={{ op://DockerSecrets/authdb/password }}"
+      - "--secret=influxdb_org={{ op://DockerSecrets/authdb/db }}"
+      - "--secret=influxdb_bucket={{ op://DockerSecrets/authdb/username }}"
+      - "--secret=influxdb_admin_token={{ op://DockerSecrets/authdb/password }}"
+    secrets:
+      - op_token
+    volumes:
+      - secrets-store-logs:/run/secrets/locket
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=/run/secrets/locket/gf_admin_user
+      - GF_SECURITY_ADMIN_PASSWORD=/run/secrets/locket/gf_admin_pw
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - loki
+      - influxdb
+
+  alloy:
+    container_name: alloy
+    image: grafana/alloy:latest
+    restart: unless-stopped
+    volumes:
+      - ./config/alloy:/etc/alloy
+    environment:
+      LOKI_HOST: loki:3100
+    depends_on:
+      - loki
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --storage.path=/var/lib/alloy/data
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --stability.level=stable
+    ports:
+      - '12345:12345'
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./loki/config/local-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+
+  influxdb:
+    image: influxdb:latest
+    depends_on:
+      locket:
+        condition: service_completed_successfully
+    container_name: influxdb
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=/run/secrets/locket/influxdb_username
+      - DOCKER_INFLUXDB_INIT_PASSWORD=/run/secrets/locket/influxdb_password
+      - DOCKER_INFLUXDB_INIT_ORG=/run/secrets/locket/influxdb_org
+      - DOCKER_INFLUXDB_INIT_BUCKET=/run/secrets/locket/influxdb_bucket
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=/run/secrets/locket/influxdb_admin_token
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+
+secrets:
+  op_token:
+    file: /etc/op/token
+
+volumes:
+  grafana_data:
+    driver: local
+  loki_data:
+    driver: local
+  influxdb_data:
+    driver: local
+  secrets-store-logs:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs

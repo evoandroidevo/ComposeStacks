@@ -1,0 +1,28 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "iteration": 162738,
+  "links": [],
+  "panels": [
+    {
+      "type": "text",
+      "title": "Welcome",
+      "gridPos": {"x": 0, "y": 0, "w": 24, "h": 3},
+      "options": {"content": "This dashboard provisions Loki and InfluxDB datasources. Add panels to query logs and metrics.", "mode": "markdown"}
+    }
+  ],
+  "schemaVersion": 36,
+  "style": "dark",
+  "tags": ["compose-logging"],
+  "templating": {"list": []},
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Compose Logging Dashboard",
+  "version": 1
+}
