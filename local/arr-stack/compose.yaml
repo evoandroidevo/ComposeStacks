@@ -1,3 +1,19 @@
+# Port Mapping:
+# Sonarr: 8989
+# Radarr: 7878
+# qBittorrent: 8080 (WebUI), 6881 (TCP/UDP)
+# Prowlarr: 9696
+# Seerr: 5055
+# Tracearr: 3000
+# TracearrDB: 5432
+# Tracearr Redis: 6379
+# Scraparr: 7100
+# Qui: 7476
+# Autobrr: 7474
+# Flaresolverr: 8191
+# Wizarr: 5690
+# Profilarr: 6869
+
 services:
   locket:
     image: ghcr.io/bpbradley/locket:latest
@@ -14,9 +30,11 @@ services:
       - '--op-token=file:/run/secrets/op_token'
       - '--map=/scraparr:/run/secrets/locket/scraparr'
       - '--map=/qui:/run/secrets/locket/qui'
+      - '--map=/tracearrdb:/run/secrets/locket/tracearrdb'
     volumes:
       - ./config/scraparr:/scraparr:ro
       - ./config/qui:/qui:ro
+      - ./config/tracearrdb:/tracearrdb:ro
       - secrets-store-arrstack:/run/secrets/locketarr
     secrets:
       - op_token
@@ -81,14 +99,14 @@ services:
     expose:
       - 7476
     volumes:
-      locket-arrstack:
-        source: secret-store-arrstack
+      - type: volume
+        source: qui-arrstack
+        target: /data
+      - type: volume
+        source: locket-arrstack
         target: /config
         volume:
           subpath: qui
-      qui-arrstack:
-        source: qui-arrstack
-        target: /data
     environment:
       - PUID=1000
       - PGID=1000
@@ -133,9 +151,14 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
+      - PORT=6869
+      - HOST=0.0.0.0
+      - UMASK=0022
       - TZ=America/Chicago
     volumes:
       - profilarr-arrstack:/config
+    expose:
+      - 6869
     restart: unless-stopped
 
   flaresolver:
@@ -186,8 +209,8 @@ services:
       - PGID=1000
       - TZ=America/Chicago
     volumes:
-      locket-arrstack:
-        source: secret-store-arrstack
+      - type: volume
+        source: locket-arrstack
         target: /app/src/scraparr/config/config.yaml
         volume:
           subpath: scraparr/config.yaml
@@ -195,9 +218,9 @@ services:
       - '7100:7100'
     restart: unless-stopped
 
-  tracarr:
+  tracearr:
     image: ghcr.io/connorgallopo/tracearr:latest
-    container_name: tracarr
+    container_name: tracearr
     depends_on:
       tracearrdb-arrstack:
         condition: service_healthy
@@ -205,50 +228,74 @@ services:
         condition: service_healthy
       locket-arrstack:
         condition: service_completed_successfully
+    # Override the default entrypoint to run our init script first, which will populate the environment variables from the secrets without
+    # writing them to disk, then exec the original entrypoint
+    # https://github.com/connorgallopo/Tracearr/blob/main/docker/Dockerfile
+    entrypoint: ['/init.sh -f /config/.env']
+    command: ['node', 'apps/server/dist/index.js']
     environment:
       - NODE_ENV=production
       - PORT=3000
       - HOST=0.0.0.0
       - TZ=America/Chicago
-      - DATABASE_URL=postgres://tracearr:${DB_PASSWORD:-tracearr}@timescale:5432/tracearr
-      - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=
-      - COOKIE_SECRET=
-      - CORS_ORIGIN=*
+      - REDIS_URL=redis://tracearr-redis-arrstack:6379
       - LOG_LEVEL=info
     expose:
       - 3000
     volumes:
-      - tracarr-arrstack:/data/backeup
+      - type: volume
+        source: tracearr-arrstack
+        target: /data
+      - type: volume
+        source: locket-arrstack
+        target: /config
+        volume:
+          subpath: tracearr
+      - type: bind
+        source: ../../common/scripts/init.sh
+        target: /init.sh
+        read_only: true
     restart: unless-stopped
 
-  postgres:
+  tracearrdb-arrstack:
     image: timescale/timescaledb-ha:pg18.1-ts2.25.0
     container_name: tracearrdb-arrstack
     shm_size: 512mb # Required for PostgreSQL shared memory (increase for large imports)
     ulimits:
+      # TimescaleDB chunks require many file descriptors
+      # Allow unlimited tuple decompression for migrations on compressed hypertables
+      # Increase lock table size for large imports (Tautulli imports with many TimescaleDB chunks)
       nofile:
         soft: 65536
         hard: 65536
-      # TimescaleDB chunks require many file descriptors
-    # Allow unlimited tuple decompression for migrations on compressed hypertables
-    # Increase lock table size for large imports (Tautulli imports with many TimescaleDB chunks)
+    # Override the default entrypoint to run our init script first, which will populate the environment variables from the secrets without
+    # writing them to disk, then exec the original entrypoint
+    # doesnt seem to be a dockerfile so i hope this works right https://github.com/timescale/timescaledb
+    entrypoint: ['init.sh -f /config/.env']
     command: postgres -c timescaledb.license=timescale -c timescaledb.max_tuples_decompressed_per_dml_transaction=0 -c max_locks_per_transaction=4096 -c timescaledb.telemetry_level=off
     environment:
-      - POSTGRES_USER=
-      - POSTGRES_PASSWORD=
-      - POSTGRES_DB=
       - TZ=America/Chicago
     volumes:
-      - tracearrdb-arrstack:/var/lib/postgresql/data
+      - type: volume
+        source: tracearrdb-arrstack
+        target: /var/lib/postgresql/data
+      - type: volume
+        source: secret-store-arrstack
+        target: /config
+        volume:
+          subpath: tracearrdb
+      - type: bind
+        source: ../../common/scripts/init.sh
+        target: /init.sh
+        read_only: true
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U tracearr']
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER}']
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
 
-  redis:
+  tracearr-redis-arrstack:
     image: redis:8-alpine
     container_name: tracearr-redis-arrstack
     command: redis-server --appendonly yes
@@ -271,6 +318,8 @@ services:
       #- DISABLE_BUILTIN_AUTH=false
     volumes:
       - wizarr-arrstack:/data
+    expose:
+      - 5690
     restart: unless-stopped
 
 volumes:
@@ -303,7 +352,3 @@ volumes:
     driver_opts:
       type: tempfs
       device: tmpfs
-
-networks:
-  default:
-    driver: bridge
