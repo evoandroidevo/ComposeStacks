@@ -1,0 +1,7 @@
+corsAllowedOrigins = ""
+
+oidcEnabled = false
+oidcIssuerUrl = ""
+oidcClientId = ""
+oidcClientSecret = ""
+oidcDisableBuiltinLogin = true
