@@ -1,130 +1,130 @@
 services:
-    locket:
-        image: ghcr.io/bpbradley/locket:op
-        user: "65532:65532"
-        container_name: locket-auth
-        security_opt:
-          - no-new-privileges:true
-        cap_drop:
-          - ALL
-    command:
-        - "--provider=op"
-        - "--mode=exit"
-        - "--inject-failure-policy=error"
-        - "--op-token=file:/run/secrets/op_token"
-        - "--map=/config:/run/secrets/locket/authelia"
-        - "--map=/lldap:/run/secrets/locket/lldap"
-        - "--secret=postgres_db={{ op://DockerSecrets/authdb/db }}"
-        - "--secret=postgress_user={{ op://DockerSecrets/authdb/username }}"
-        - "--secret=postgress_password={{ op://DockerSecrets/authdb/password }}"
-    secrets:
-      - op_token
+  locket:
+    image: ghcr.io/bpbradley/locket:op
+    user: '65532:65532'
+    container_name: locket-auth
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+  command:
+    - '--provider=op'
+    - '--mode=exit'
+    - '--inject-failure-policy=error'
+    - '--op-token=file:/run/secrets/op_token'
+    - '--map=/config:/run/secrets/locket/authelia'
+    - '--map=/lldap:/run/secrets/locket/lldap'
+    - '--secret=postgres_db={{ op://DockerSecrets/authdb/db }}'
+    - '--secret=postgress_user={{ op://DockerSecrets/authdb/username }}'
+    - '--secret=postgress_password={{ op://DockerSecrets/authdb/password }}'
+  secrets:
+    - op_token
+  volumes:
+    # Mount in your actual secret templates, with secret references
+    - ./config:/authelia:ro
+    - ./lldap:/lldap:ro
+      # Mount in your output directory, where you want secrets materialized
+    - secrets-store-auth:/run/secrets/locket
+
+  authelia-db:
+    image: postgres:15.2
+    depends_on:
+      locket:
+        condition: service_completed_successfully
+    container_name: authdb
+    expose:
+      - 5432
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB_FILE: /run/secrets/locket/postgres_db
+      POSTGRES_USER_FILE: /run/secrets/locket/postgres_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/locket/postgres_password
     volumes:
-        # Mount in your actual secret templates, with secret references
-      - ./config:/authelia:ro
-      - ./lldap:/lldap:ro
-        # Mount in your output directory, where you want secrets materialized
-      - secrets-store-auth:/run/secrets/locket
+      - authdb-git:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
 
-    authelia-db:
-        image: postgres:15.2
-        depends_on:
-            locket:
-                condition: service_completed_successfully
-        container_name: authdb
-        expose:
-            - 5432
-        restart: unless-stopped
-        environment:
-          POSTGRES_DB_FILE: /run/secrets/locket/postgres_db
-          POSTGRES_USER_FILE: /run/secrets/locket/postgres_user
-          POSTGRES_PASSWORD_FILE: /run/secrets/locket/postgres_password
-        volumes:
-            - authdb-git:/var/lib/postgresql/data
-        healthcheck:
-          test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-          interval: 10s
-          retries: 5
-          start_period: 30s
-          timeout: 10s
+  lldap:
+    image: lldap/lldap:stable
+    depends_on:
+      locket:
+        condition: service_completed_successfully
+    container_name: lldap
+    ports:
+      - '3890:3890'
+      - '17170:17170'
+    expose:
+      - 3890
+    restart: unless-stopped
+    volumes:
+      - lldap-git:/data
+      - type: volume
+        source: secrets-store-auth
+        target: /config
+        volume:
+          subpath: lldap
+    environment:
+      UID: 1000
+      GID: 1000
+      TZ: America/Chicago
 
-    lldap:
-        image: lldap/lldap:stable
-        depends_on:
-            locket:
-                condition: service_completed_successfully
-        container_name: lldap
-        ports:
-        - "3890:3890"
-        - "17170:17170"
-        expose:
-            - 3890
-        restart: unless-stopped
-        volumes:
-            - lldap-git:/data
-            - type: volume
-              source: secrets-store-auth
-              target: /config
-              volume:
-                subpath: lldap
-        environment:
-            UID: 1000
-            GID: 1000
-            TZ: America/Chicago
+  authelia:
+    image: authelia/authelia:latest
+    depends_on:
+      locket:
+        condition: service_completed_successfully
+      authelia-db:
+        condition: service_healthy
+      redis:
+        required: false
+      lldap:
+        condition: service_healthy
+    container_name: authelia
+    ports:
+      - 9091:9091
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: secrets-store-auth
+        target: /config
+        volume:
+          subpath: config
+    environment:
+      PUID: 1000
+      PGID: 1000
+      TZ: America/Chicago
+      X_AUTHELIA_CONFIG_FILTERS: template
 
-    authelia:
-        image: authelia/authelia:latest
-        depends_on:
-            locket:
-                condition: service_completed_successfully
-            authelia-db:
-                condition: service_healthy
-            redis:
-                required: false
-            lldap:
-                condition: service_healthy
-        container_name: authelia
-        ports:
-            - 9091:9091  
-        restart: unless-stopped
-        volumes:
-            - type: volume
-              source: secrets-store-auth
-              target: /config
-              volume:
-                subpath: config
-        environment:
-            PUID: 1000
-            PGID: 1000
-            TZ: America/Chicago
-            X_AUTHELIA_CONFIG_FILTERS: template
-
-    redis:
-        image: redis:alpine
-        container_name: redisauthelia
-        volumes:
-            - redis-git:/data
-        expose:
-            - 6379
-        restart: unless-stopped
-        environment:
-            TZ: America/Chicago
-            PUID: 1000
-            PGID: 1000
+  redis:
+    image: redis:alpine
+    container_name: redisauthelia
+    volumes:
+      - redis-git:/data
+    expose:
+      - 6379
+    restart: unless-stopped
+    environment:
+      TZ: America/Chicago
+      PUID: 1000
+      PGID: 1000
 
 secrets:
   op_token:
     file: /etc/op/token
 
 volumes:
-    redis-git:
-        driver: local
-    lldap-git:
-        driver: local
-    authdb-git:
-        driver: local
-    secrets-store-auth:
-        driver: local
-        driver_opts:
-          type: tmpfs
-          device: tmpfs
+  redis-git:
+    driver: local
+  lldap-git:
+    driver: local
+  authdb-git:
+    driver: local
+  secrets-store-auth:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
