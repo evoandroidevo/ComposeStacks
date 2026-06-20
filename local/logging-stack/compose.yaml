@@ -1,24 +1,24 @@
 services:
   locket:
     image: ghcr.io/bpbradley/locket:op
-    user: "65532:65532"
+    user: '65532:65532'
     container_name: locket-auth
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
     command:
-      - "--provider=op"
-      - "--mode=exit"
-      - "--inject-failure-policy=error"
-      - "--op-token=file:/run/secrets/op_token"
-      - "--secret=gf_admin_user={{ op://DockerSecrets/authdb/db }}"
-      - "--secret=gf_admin_pw={{ op://DockerSecrets/authdb/db }}"
-      - "--secret=influxdb_username={{ op://DockerSecrets/authdb/username }}"
-      - "--secret=influxdb_password={{ op://DockerSecrets/authdb/password }}"
-      - "--secret=influxdb_org={{ op://DockerSecrets/authdb/db }}"
-      - "--secret=influxdb_bucket={{ op://DockerSecrets/authdb/username }}"
-      - "--secret=influxdb_admin_token={{ op://DockerSecrets/authdb/password }}"
+      - '--provider=op'
+      - '--mode=exit'
+      - '--inject-failure-policy=error'
+      - '--op-token=file:/run/secrets/op_token'
+      - '--secret=gf_admin_user={{ op://DockerSecrets/authdb/db }}'
+      - '--secret=gf_admin_pw={{ op://DockerSecrets/authdb/db }}'
+      - '--secret=influxdb_username={{ op://DockerSecrets/authdb/username }}'
+      - '--secret=influxdb_password={{ op://DockerSecrets/authdb/password }}'
+      - '--secret=influxdb_org={{ op://DockerSecrets/authdb/db }}'
+      - '--secret=influxdb_bucket={{ op://DockerSecrets/authdb/username }}'
+      - '--secret=influxdb_admin_token={{ op://DockerSecrets/authdb/password }}'
     secrets:
       - op_token
     volumes:
@@ -29,7 +29,7 @@ services:
     container_name: grafana
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       - GF_SECURITY_ADMIN_USER=/run/secrets/locket/gf_admin_user
       - GF_SECURITY_ADMIN_PASSWORD=/run/secrets/locket/gf_admin_pw
@@ -66,7 +66,7 @@ services:
     container_name: loki
     restart: unless-stopped
     ports:
-      - "3100:3100"
+      - '3100:3100'
     command: -config.file=/etc/loki/local-config.yaml
     volumes:
       - ./loki/config/local-config.yaml:/etc/loki/local-config.yaml:ro
@@ -80,7 +80,7 @@ services:
     container_name: influxdb
     restart: unless-stopped
     ports:
-      - "8086:8086"
+      - '8086:8086'
     environment:
       - DOCKER_INFLUXDB_INIT_MODE=setup
       - DOCKER_INFLUXDB_INIT_USERNAME=/run/secrets/locket/influxdb_username
