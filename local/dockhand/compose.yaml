@@ -9,8 +9,10 @@ services:
       - ALL
     command:
       - '--provider=op'
-      - '--mode=exit'
+      - '--mode=one-shot'
       - '--inject-failure-policy=error'
+      - '--log-template=compose'
+      - '--log-level=info'
       - '--op-token=file:/run/secrets/op_token'
       - '--secret=encryption_key={{ op://DockerSecrets/authdb/encryption_key }}'
     secrets:
@@ -23,18 +25,15 @@ services:
     container_name: dockhand
     restart: unless-stopped
     entrypoint:
-      [
-        'loadenvkey.sh',
-        '/sbin/tini',
-        '--',
-        '/usr/local/bin/docker-entrypoint.sh',
-      ]
+      ['/sbin/tini', '--', '/init.sh -f /run/secrets/locket/encryption_key']
+    cmd: ['/usr/local/bin/docker-entrypoint.sh']
     group_add:
       - 999 #docker group
     ports:
       - '3000:3000'
     volumes:
-      - ./loadenvkey.sh:/loadenvkey.sh:ro
+      - ../../common/scripts/init.sh:/init.sh:ro
+      - secrets-store-dockhand:/run/secrets/locket
       - /var/run/docker.sock:/var/run/docker.sock
       - /app/data:/app/data
     environment:
