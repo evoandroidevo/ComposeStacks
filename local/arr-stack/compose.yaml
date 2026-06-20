@@ -2,18 +2,18 @@ services:
   locket:
     image: ghcr.io/bpbradley/locket:latest
     container_name: locket-arrstack
-    user: "65532:65532"
+    user: '65532:65532'
     cap_drop:
       - ALL
     security_opt:
       - no-new-privileges:true
     command:
-        - "--provider=op"
-        - "--mode=exit"
-        - "--inject-failure-policy=error"
-        - "--op-token=file:/run/secrets/op_token"
-        - "--map=/scraparr:/run/secrets/locket/scraparr"
-        - "--map=/qui:/run/secrets/locket/qui"
+      - '--provider=op'
+      - '--mode=exit'
+      - '--inject-failure-policy=error'
+      - '--op-token=file:/run/secrets/op_token'
+      - '--map=/scraparr:/run/secrets/locket/scraparr'
+      - '--map=/qui:/run/secrets/locket/qui'
     volumes:
       - ./config/scraparr:/scraparr:ro
       - ./config/qui:/qui:ro
@@ -64,8 +64,8 @@ services:
     expose:
       - 8080
     ports:
-      - "6881:6881"
-      - "6881:6881/udp"
+      - '6881:6881'
+      - '6881:6881/udp'
     stop_grace_period: 10s"
     restart: unless-stopped
 
@@ -192,7 +192,7 @@ services:
         volume:
           subpath: scraparr/config.yaml
     ports:
-      - "7100:7100"
+      - '7100:7100'
     restart: unless-stopped
 
   tracarr:
@@ -225,11 +225,11 @@ services:
   postgres:
     image: timescale/timescaledb-ha:pg18.1-ts2.25.0
     container_name: tracearrdb-arrstack
-    shm_size: 512mb  # Required for PostgreSQL shared memory (increase for large imports)
+    shm_size: 512mb # Required for PostgreSQL shared memory (increase for large imports)
     ulimits:
       nofile:
         soft: 65536
-        hard: 65536  
+        hard: 65536
       # TimescaleDB chunks require many file descriptors
     # Allow unlimited tuple decompression for migrations on compressed hypertables
     # Increase lock table size for large imports (Tautulli imports with many TimescaleDB chunks)
@@ -242,7 +242,7 @@ services:
     volumes:
       - tracearrdb-arrstack:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U tracearr"]
+      test: ['CMD-SHELL', 'pg_isready -U tracearr']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -255,7 +255,7 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -303,7 +303,6 @@ volumes:
     driver_opts:
       type: tempfs
       device: tmpfs
-
 
 networks:
   default:
