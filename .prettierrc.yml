@@ -1,0 +1,6 @@
+# .prettierrc.yaml
+tabWidth: 2
+useTabs: false
+singleQuote: true
+bracketSpacing: true
+proseWrap: "preserve"
