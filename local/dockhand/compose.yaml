@@ -20,6 +20,33 @@ services:
     volumes:
       - secrets-store-dockhand:/run/secrets/locket
 
+  socket-proxy:
+    image: tecnativa/docker-socket-proxy
+    container_name: socket-proxy
+    restart: unless-stopped
+    environment:
+      # Required for Dockhand core functionality
+      - CONTAINERS=1
+      - IMAGES=1
+      - NETWORKS=1
+      - VOLUMES=1
+      - EVENTS=1
+      - POST=1
+      - DELETE=1
+      # Required for dashboard host info and disk usage
+      - INFO=1
+      - SYSTEM=1
+      # Required for vulnerability scanning
+      - ALLOW_START=1
+      - ALLOW_STOP=1
+      - ALLOW_RESTARTS=1
+      # Optional: enable for terminal access
+      # - EXEC=1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - socket-proxy
+
   dockhand:
     image: fnsys/dockhand:latest
     container_name: dockhand
@@ -38,11 +65,15 @@ services:
       - ../../common/scripts/init.sh:/init.sh:ro
       - secrets-store-dockhand:/run/secrets/locketDH
       - /var/run/docker.sock:/var/run/docker.sock
-      - /app/data:/app/data
+      - /opt/dockhand:/opt/dockhand
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=America/Chicago
+      - DATA_DIR=/opt/dockhand
+      networks:
+      - socket-proxy
+      - default
 
 secrets:
   op_token:
@@ -54,3 +85,6 @@ volumes:
     driver_opts:
       type: tmpfs
       device: tmpfs
+networks:
+  socket-proxy:
+    internal: true
