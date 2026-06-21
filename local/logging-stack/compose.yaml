@@ -2,14 +2,14 @@ services:
   locket:
     image: ghcr.io/bpbradley/locket:op
     user: '65532:65532'
-    container_name: locket-auth
+    container_name: locket-logging-stack
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
     command:
       - '--provider=op'
-      - '--mode=exit'
+      - '--mode=one-shot'
       - '--inject-failure-policy=error'
       - '--op-token=file:/run/secrets/op_token'
       - '--secret=gf_admin_user={{ op://DockerSecrets/authdb/db }}'
