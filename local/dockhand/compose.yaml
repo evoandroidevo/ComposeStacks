@@ -50,6 +50,11 @@ services:
   dockhand:
     image: fnsys/dockhand:latest
     container_name: dockhand
+    depends_on:
+      locket:
+        condition: service_completed_successfully
+      socket-proxy:
+        condition: service_healthy
     restart: unless-stopped
     # Override the default entrypoint to load the encryption key from the secret file into an environment variable without writing
     # them to disk, then exec the original entrypoint
@@ -71,7 +76,7 @@ services:
       - PGID=1000
       - TZ=America/Chicago
       - DATA_DIR=/opt/dockhand
-      networks:
+    networks:
       - socket-proxy
       - default
 
