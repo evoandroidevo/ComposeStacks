@@ -68,7 +68,7 @@ services:
       - '3000:3000'
     volumes:
       - ../../common/scripts/init.sh:/init.sh:ro
-      - secrets-store-dockhand:/run/secrets/locketDH
+      - secrets-store-dockhand:/run/secrets/locketDH:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - /opt/dockhand:/opt/dockhand
     environment:

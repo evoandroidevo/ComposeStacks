@@ -29,7 +29,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /opt/stacks:/opt/stacks
-      - secrets-store-agent:/run/secrets/locket
+      - secrets-store-agent:/run/secrets/locket:ro
     environment:
       - TZ=America/Chicago
       - STACKS_DIR=/opt/stacks
