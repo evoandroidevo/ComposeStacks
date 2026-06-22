@@ -49,6 +49,7 @@ services:
       - type: volume
         source: secrets-store-auth
         target: /config
+        read_only: true
         volume:
           subpath: postgres
       - type: volume
@@ -80,6 +81,7 @@ services:
       - type: volume
         source: secrets-store-auth
         target: /config
+        read_only: true
         volume:
           subpath: lldap
     environment:
@@ -106,6 +108,7 @@ services:
       - type: volume
         source: secrets-store-auth
         target: /config
+        read_only: true
         volume:
           subpath: config
     environment:
