@@ -14,7 +14,7 @@ services:
       - '--log-template=compose'
       - '--log-level=info'
       - '--op-token=file:/run/secrets/op_token'
-      - '--secret=encryption_key={{ op://DockerSecrets/authdb/encryption_key }}'
+      - '--secret=encryption_key={{ op://DockerSecrets/dockhand/encryption_key }}'
     secrets:
       - op_token
     volumes:

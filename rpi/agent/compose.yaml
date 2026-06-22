@@ -12,7 +12,7 @@ services:
       - '--mode=one-shot'
       - '--inject-failure-policy=error'
       - '--op-token=file:/run/secrets/op_token'
-      - '--secret=token={{ op://DockerSecrets/authdb/db }}'
+      - '--secret=token={{ op://DockerSecrets/dockhand/rpi-token }}'
     secrets:
       - op_token
     volumes:
