@@ -47,6 +47,7 @@ http_url = {{ "op://DockerSecrets/authelia-lldap/lldap-http_url" }}
 ## You can generate it with (on linux):
 ## LC_ALL=C tr -dc 'A-Za-z0-9!#%&'\''()*+,-./:;<=>?@[\]^_{|}~' </dev/urandom | head -c 32; echo ''
 jwt_secret = {{ "op://DockerSecrets/authelia-lldap/lldap-jwt_secret" }}
+
 ## Base DN for LDAP.
 ## This is usually your domain name, and is used as a
 ## namespace for your users. The choice is arbitrary, but will be needed

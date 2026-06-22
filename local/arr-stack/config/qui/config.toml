@@ -4,4 +4,4 @@ oidcEnabled = false
 oidcIssuerUrl = ""
 oidcClientId = ""
 oidcClientSecret = ""
-oidcDisableBuiltinLogin = true
+oidcDisableBuiltinLogin = false
