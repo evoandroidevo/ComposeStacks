@@ -56,7 +56,7 @@ services:
     networks:
       - socket-proxy
 
-  # Need to look about a config file that can have enviroments added by code.
+  # TODO: Need to look about a config file that can have enviroments added by code.
   dockhand:
     image: fnsys/dockhand:latest
     container_name: dockhand
