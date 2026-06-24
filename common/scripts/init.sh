@@ -58,7 +58,7 @@ fi
 # Supports lines of the form KEY=VALUE, ignores empty lines and comments.
 while IFS= read -r line || [ -n "$line" ]; do
   case "$line" in
-    ''|#*)
+    '#'*|"")
       continue
       ;;
   esac
