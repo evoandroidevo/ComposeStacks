@@ -1,22 +1,25 @@
+# TODO:
+# test postgress with the custom entery script
+# make sure the file persmisions works will all the services or if they need to be setup in the compose
 services:
   locket:
     image: ghcr.io/bpbradley/locket:op
-    user: '65532:65532'
+    user: "65532:65532"
     container_name: locket-auth
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
     command:
-      - '--provider=op'
-      - '--mode=one-shot'
-      - '--inject-failure-policy=error'
-      - '--log-template=compose'
-      - '--log-level=info'
-      - '--op-token=file:/run/secrets/op_token'
-      - '--map=/config:/run/secrets/locket/authelia'
-      - '--map=/lldap:/run/secrets/locket/lldap'
-      - '--map=/postgres:/run/secrets/locket/postgres'
+      - "--provider=op"
+      # one-shot removes the secrets before they can be imported switching to park.
+      - "--mode=park"
+      - "--inject-failure-policy=error"
+      - "--log-level=info"
+      - "--op-token=file:/run/secrets/op_token"
+      - "--map=/config:/run/secrets/locket/authelia"
+      - "--map=/lldap:/run/secrets/locket/lldap"
+      - "--map=/postgres:/run/secrets/locket/postgres"
     secrets:
       - op_token
     volumes:
@@ -31,13 +34,13 @@ services:
     image: postgres:15.2
     depends_on:
       locket:
-        condition: service_completed_successfully
+        condition: service_healthy
     container_name: authdb
     # Override the default entrypoint to run our init script first, which will populate the environment variables from the secrets without
     # writing them to disk, then exec the original entrypoint
     # https://github.com/docker-library/postgres/blob/master/15/alpine3.24/Dockerfile
-    entrypoint: ['/init.sh -f /config/.env']
-    command: ['/bin/sh', 'docker-entrypoint.sh', 'postgres']
+    entrypoint: ["/init.sh", "-f", "/config/.env"] # untested if correct
+    command: ["/bin/sh", "docker-entrypoint.sh", "postgres"]
     expose:
       - 5432
     restart: unless-stopped
@@ -56,7 +59,7 @@ services:
         source: authdb-git
         target: /var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       retries: 5
       start_period: 30s
@@ -66,11 +69,11 @@ services:
     image: lldap/lldap:stable
     depends_on:
       locket:
-        condition: service_completed_successfully
+        condition: service_healthy
     container_name: lldap
     ports:
-      - '3890:3890'
-      - '17170:17170'
+      - "3890:3890"
+      - "17170:17170"
     expose:
       - 3890
     restart: unless-stopped
@@ -93,7 +96,7 @@ services:
     image: authelia/authelia:latest
     depends_on:
       locket:
-        condition: service_completed_successfully
+        condition: service_healthy
       authelia-db:
         condition: service_healthy
       redis:
@@ -130,7 +133,7 @@ services:
       PUID: 1000
       PGID: 1000
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
