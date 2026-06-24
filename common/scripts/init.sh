@@ -1,5 +1,12 @@
 #!/bin/sh
 
+# Used for docker containers that dont support loading environment variables
+# from files, to use override the entrypoint in the compose file with this script
+# pointed to the .env to load and set the default entrypoint and command in 
+# command: section of compose.
+# In this repo used with locket to load .env with secrets in a tempfs volume that this
+# script then loaded before the container loads
+
 set -eu
 
 usage() {
