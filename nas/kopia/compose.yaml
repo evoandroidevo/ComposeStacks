@@ -42,6 +42,8 @@ services:
       KOPIA_PASSWORD: ${REPO_PASSWORD}
       USER: ${REPO_USER}
     volumes:
+      - secrets-store-auth:/run/secrets/locket:ro
+      - ../../common/scripts/init.sh:/init.sh:ro
       # Mount local folders needed by kopia
       - /mnt/thehub/Data/kopia/config:/app/config
       - /mnt/thehub/Data/kopia/cache:/app/cache
