@@ -5,7 +5,7 @@ services:
     image: ghcr.io/bpbradley/locket:op
     # OP complains about file permissions if it doesnt have 65532 user or group.
     user: "65532:1000"
-    container_name: locket-auth
+    container_name: locket-dockhand
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -89,6 +89,7 @@ services:
       - PGID=1000
       - TZ=America/Chicago
       - DATA_DIR=/opt/dockhand
+      - HOST_DATA_DIR=/opt/dockhand
     networks:
       - socket-proxy
       - default
