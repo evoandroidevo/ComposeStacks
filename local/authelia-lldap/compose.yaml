@@ -75,6 +75,8 @@ services:
       locket:
         condition: service_healthy
     container_name: lldap
+    # change config location default
+    command: ["run", "--config-file", "/config/lldap_config.toml"]
     ports:
       - "3890:3890"
       - "17170:17170"
@@ -95,15 +97,6 @@ services:
       UID: 1000
       GID: 1000
       TZ: America/Chicago
-      LLDAP_HTTP_URL_FILE: /config/http_url
-      LLDAP_JWT_SECRET_FILE: /config/jwt_secret
-      LLDAP_LDAP_BASE_DN_FILE: /config/ldap_base_dn
-      LLDAP_LDAP_USER_DN_FILE: /config/ldap_user_dn
-      LLDAP_LDAP_USER_EMAIL_FILE: /config/ldap_user_email
-      LLDAP_LDAP_USER_PASS_FILE: /config/ldap_user_pass
-      LLDAP_DATABASE_URL: "sqlite:///data/users.db?mode=rwc"
-      LLDAP_KEY_FILE: ""
-      LLDAP_KEY_SEED_FILE: /config/key_seed
 
 
   authelia:
