@@ -18,8 +18,8 @@ services:
       - "--log-level=info"
       - "--user=65532:1000"
       # -rw-r----- file mode
-      - "--file-mode=0640"
-      - "--dir-mode=0740"
+      - "--file-mode=0644"
+      - "--dir-mode=0766"
       - "--op-token=file:/run/secrets/op_token"
       - "--map=/config:/run/secrets/locket/authelia"
       - "--map=/lldap:/run/secrets/locket/lldap"
@@ -71,7 +71,6 @@ services:
 
   lldap:
     image: lldap/lldap:stable
-    user: "0:1000"
     depends_on:
       locket:
         condition: service_healthy
