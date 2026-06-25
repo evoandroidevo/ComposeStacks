@@ -18,8 +18,8 @@ services:
       - "--log-level=info"
       - "--user=65532:1000"
       # -rw-r----- file mode
-      - "--file-mode=0644"
-      - "--dir-mode=0766"
+      - "--file-mode=0777"
+      - "--dir-mode=0777"
       - "--op-token=file:/run/secrets/op_token"
       - "--map=/config:/run/secrets/locket/authelia"
       - "--map=/lldap:/run/secrets/locket/lldap"
