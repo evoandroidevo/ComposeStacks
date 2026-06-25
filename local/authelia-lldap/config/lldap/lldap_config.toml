@@ -108,7 +108,7 @@ database_url = "sqlite:///data/users.db?mode=rwc"
 ## each password.
 ## Randomly generated on first run if it doesn't exist.
 ## Env variable: LLDAP_KEY_FILE
-#key_file = "/data/private_key"
+key_file = "" #silence log message
 key_seed = {{ "op://DockerSecrets/authelia-lldap/lldap-key_seed" }}
 
 ## Seed to generate the server private key, see key_file above.

@@ -22,7 +22,7 @@ theme: dark
 webauthn:
   disable: false
   timeout: '60 seconds'
-  display_name: {{ "op://DockerSecrets/authelia-lldap/webauthn-display-name" }}
+  display_name: {{ "op://DockerSecrets/authelia-lldap/webauthn-display_name" }}
   attestation_conveyance_preference: 'indirect'
   filtering:
     permitted_aaguids: []
@@ -162,7 +162,7 @@ identity_providers:
   oidc:
     hmac_secret: '{{ op://DockerSecrets/authelia-lldap/identity_providers-oidc-hmac_secret }}'
     jwks:
-      - key: {{ "{{ secret \"/config/key.key\" | mindent 10 \"|\" | msquote }}" }}
+      - key: {{ secret "/config/key.key" | mindent 10 "|" | msquote }}
     lifespans:
       access_token: '1h'
       authorize_code: '1m'
@@ -188,7 +188,7 @@ identity_providers:
         authorization_policy: two_factor
         pre_configured_consent_duration: 1w
         redirect_uris:
-          - {{ op://DockerSecrets/authelia-lldap/identity_providers-oidc-redirect_uris }}
+          - {{ op://DockerSecrets/authelia-lldap/identity_providers-oidc-clients-redirect_uris }}
         scopes:
           - openid
           - profile
