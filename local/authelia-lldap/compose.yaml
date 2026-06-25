@@ -111,12 +111,12 @@ services:
     depends_on:
       locket:
         condition: service_healthy
-      authelia-db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      lldap:
-        condition: service_healthy
+      # authelia-db:
+      #   condition: service_healthy
+      # redis:
+      #   condition: service_healthy
+      # lldap:
+      #   condition: service_healthy
     container_name: authelia
     ports:
       - 9091:9091
