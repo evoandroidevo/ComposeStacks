@@ -162,7 +162,7 @@ identity_providers:
   oidc:
     hmac_secret: '{{ op://DockerSecrets/authelia-lldap/identity_providers-oidc-hmac_secret }}'
     jwks:
-      - key: {{ "{{ secret \"/config/key.key\" | mindent 10 \"|\" | msquote }}" }}
+      - key: {{ secret \"/config/key.key\" | mindent 10 \"|\" | msquote }}
     lifespans:
       access_token: '1h'
       authorize_code: '1m'
