@@ -21,7 +21,7 @@ services:
       - "--file-mode=0777"
       - "--dir-mode=0777"
       - "--op-token=file:/run/secrets/op_token"
-      - "--map=/config:/run/secrets/locket/authelia"
+      - "--map=/authelia:/run/secrets/locket/authelia"
       - "--map=/lldap:/run/secrets/locket/lldap"
       - "--map=/postgres:/run/secrets/locket/postgres"
     secrets:
@@ -111,12 +111,12 @@ services:
     depends_on:
       locket:
         condition: service_healthy
-      # authelia-db:
-      #   condition: service_healthy
-      # redis:
-      #   condition: service_healthy
-      # lldap:
-      #   condition: service_healthy
+      authelia-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      lldap:
+        condition: service_healthy
     container_name: authelia
     ports:
       - 9091:9091
@@ -124,7 +124,7 @@ services:
     volumes:
       - type: volume
         source: secrets-store-auth
-        target: /config
+        target: /authelia
         read_only: false
         volume:
           subpath: config
