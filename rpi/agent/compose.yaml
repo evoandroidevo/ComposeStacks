@@ -1,7 +1,7 @@
 services:
   locket:
     image: ghcr.io/bpbradley/locket:op
-    user: '65532:65532'
+    user: '65532:0'
     container_name: locket-agent-stack
     security_opt:
       - no-new-privileges:true
@@ -9,10 +9,16 @@ services:
       - ALL
     command:
       - '--provider=op'
-      - '--mode=one-shot'
-      - '--inject-failure-policy=error'
+      # Park is needed otherwise when the continer exits it will remove the files creates in the tempfs volume
+      - "--mode=park"
+      - "--inject-failure-policy=error"
+      - "--log-level=info"
+      - "--user=65532:0"
+      # -rw-r----- file mode
+      - "--file-mode=0640"
+      - "--dir-mode=0740"
       - '--op-token=file:/run/secrets/op_token'
-      - '--secret=token={{ op://DockerSecrets/dockhand/rpi-token }}'
+      - '--secret=token=TOKEN={{ op://DockerSecrets/dockhand/rpi-token }}'
     secrets:
       - op_token
     volumes:
@@ -24,8 +30,8 @@ services:
     image: ghcr.io/finsys/hawser:latest
     # Override the default entrypoint to load the token from the secret file into an environment variable without writing
     # them to disk, then exec the original entrypoint
-    enterypoint: ['/init.sh -f /run/secrets/locket/token']
-    command: ['/usr/local/bin/hawser']
+    enterypoint: ["/init.sh", "-f", "/run/secrets/locket/token"]
+    command: ["/usr/local/bin/hawser"]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /opt/stacks:/opt/stacks
@@ -67,3 +73,4 @@ volumes:
     driver_opts:
       type: tmpfs
       device: tmpfs
+      o: uid=65532,gid=1000,mode=740
