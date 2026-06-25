@@ -71,7 +71,7 @@ services:
 
   lldap:
     image: lldap/lldap:stable
-    user: "1000:1000"
+    user: "0:1000"
     depends_on:
       locket:
         condition: service_healthy
