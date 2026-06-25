@@ -43,8 +43,8 @@ services:
     # Override the default entrypoint to run our init script first, which will populate the environment variables from the secrets without
     # writing them to disk, then exec the original entrypoint
     # https://github.com/docker-library/postgres/blob/master/15/alpine3.24/Dockerfile
-    entrypoint: ["/init.sh", "-f", "/config/.env"] # untested if correct
-    command: ["docker-entrypoint.sh", "postgres"]
+    entrypoint: ["/init.sh", "-f", "/config/.env"] # works
+    command: ["docker-entrypoint.sh", "postgres"] # get error about this script not found?
     expose:
       - 5432
     restart: unless-stopped
