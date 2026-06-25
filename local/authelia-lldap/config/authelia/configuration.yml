@@ -188,7 +188,7 @@ identity_providers:
         authorization_policy: two_factor
         pre_configured_consent_duration: 1w
         redirect_uris:
-          - {{ op://DockerSecrets/authelia-lldap/identity_providers-oidc-redirect_uris }}
+          - {{ op://DockerSecrets/authelia-lldap/identity_providers-oidc-clients-redirect_uris }}
         scopes:
           - openid
           - profile
