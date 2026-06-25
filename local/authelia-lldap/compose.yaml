@@ -124,10 +124,10 @@ services:
     volumes:
       - type: volume
         source: secrets-store-auth
-        target: /authelia
+        target: /config
         read_only: false
         volume:
-          subpath: config
+          subpath: authelia
     environment:
       PUID: 1000
       PGID: 1000
