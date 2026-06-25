@@ -44,7 +44,7 @@ services:
     # writing them to disk, then exec the original entrypoint
     # https://github.com/docker-library/postgres/blob/master/15/alpine3.24/Dockerfile
     entrypoint: ["/init.sh", "-f", "/config/.env"] # untested if correct
-    command: ["/bin/sh", "docker-entrypoint.sh", "postgres"]
+    command: ["docker-entrypoint.sh", "postgres"]
     expose:
       - 5432
     restart: unless-stopped
