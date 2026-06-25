@@ -22,7 +22,7 @@ theme: dark
 webauthn:
   disable: false
   timeout: '60 seconds'
-  display_name: {{ "op://DockerSecrets/authelia-lldap/webauthn-display-name" }}
+  display_name: {{ "op://DockerSecrets/authelia-lldap/webauthn-display_name" }}
   attestation_conveyance_preference: 'indirect'
   filtering:
     permitted_aaguids: []
