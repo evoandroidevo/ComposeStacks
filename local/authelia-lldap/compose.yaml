@@ -125,7 +125,7 @@ services:
       - type: volume
         source: secrets-store-auth
         target: /config
-        read_only: true
+        read_only: false
         volume:
           subpath: config
     environment:
