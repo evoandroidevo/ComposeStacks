@@ -89,6 +89,7 @@ services:
       - PGID=1000
       - TZ=America/Chicago
       - DATA_DIR=/opt/dockhand
+      - HOST_DATA_DIR=/opt/dockhand
     networks:
       - socket-proxy
       - default
