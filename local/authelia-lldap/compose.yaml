@@ -62,12 +62,6 @@ services:
       - type: volume
         source: authdb-git
         target: /var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
-      interval: 10s
-      retries: 5
-      start_period: 30s
-      timeout: 10s
 
   lldap:
     image: lldap/lldap:stable
@@ -114,7 +108,7 @@ services:
       authelia-db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
       lldap:
         condition: service_healthy
     container_name: authelia
