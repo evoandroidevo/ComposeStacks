@@ -114,7 +114,7 @@ services:
       authelia-db:
         condition: service_healthy
       redis:
-        condition: service_healthy
+        condition: service_started
       lldap:
         condition: service_healthy
     container_name: authelia
