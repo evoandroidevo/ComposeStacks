@@ -31,7 +31,7 @@
 #http_port = 17170
 
 ## The public URL of the server, for password reset links.
-http_url = {{ "op://DockerSecrets/authelia-lldap/lldap-http_url" }}
+http_url = "{{ "op://DockerSecrets/authelia-lldap/lldap-http_url" }}"
 ## The path to the front-end assets (relative to the working directory).
 #assets_path = "./app"
 
@@ -61,12 +61,12 @@ ldap_base_dn = "dc={{ op://DockerSecrets/authelia-lldap/bbvutbry72dndqr4jb5ztnb6
 ## For the LDAP interface, a value of "admin" here will create the LDAP
 ## user "cn=admin,ou=people,dc=example,dc=com" (with the base DN above).
 ## For the administration interface, this is the username.
-ldap_user_dn = {{ "op://DockerSecrets/authelia-lldap/lldap-ldap_user_dn" }}
+ldap_user_dn = "{{ "op://DockerSecrets/authelia-lldap/lldap-ldap_user_dn" }}"
 
 ## Admin email.
 ## Email for the admin account. It is only used when initially creating
 ## the admin user, and can safely be omitted.
-ldap_user_email = {{ "op://DockerSecrets/authelia-lldap/lldap-ldap_user_email" }}
+ldap_user_email = "{{ "op://DockerSecrets/authelia-lldap/lldap-ldap_user_email" }}"
 
 ## Admin password.
 ## Password for the admin account, both for the LDAP bind and for the
@@ -78,7 +78,7 @@ ldap_user_email = {{ "op://DockerSecrets/authelia-lldap/lldap-ldap_user_email" }
 ## in the LLDAP_LDAP_USER_PASS_FILE environment variable
 ## Note: you can create another admin user for user administration, this
 ## is just the default one.
-ldap_user_pass = {{ "op://DockerSecrets/authelia-lldap/authentication_backend-ldap-user" }}
+ldap_user_pass = "{{ "op://DockerSecrets/authelia-lldap/authentication_backend-ldap-user" }}"
 
 ## Force reset of the admin password.
 ## Break glass in case of emergency: if you lost the admin password, you
@@ -109,7 +109,7 @@ database_url = "sqlite:///data/users.db?mode=rwc"
 ## Randomly generated on first run if it doesn't exist.
 ## Env variable: LLDAP_KEY_FILE
 key_file = "" #silence log message
-key_seed = {{ "op://DockerSecrets/authelia-lldap/lldap-key_seed" }}
+key_seed = "{{ "op://DockerSecrets/authelia-lldap/lldap-key_seed" }}"
 
 ## Seed to generate the server private key, see key_file above.
 ## This can be any random string, the recommendation is that it's at least 12
