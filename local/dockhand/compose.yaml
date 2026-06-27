@@ -21,7 +21,6 @@ services:
       - "--file-mode=0640"
       - "--dir-mode=0740"
       - "--op-token=file:/run/secrets/op_token"
-      # Dockhand needs the Encryption key to be 32 bytes
       - "--secret=encryption_key=ENCRYPTION_KEY={{ op://DockerSecrets/dockhand/encryption_key }}"
       # --secret=file name=file contents
     secrets:
