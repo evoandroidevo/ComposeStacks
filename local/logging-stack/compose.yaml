@@ -1,109 +1,92 @@
 services:
-  locket:
-    image: ghcr.io/bpbradley/locket:op
-    user: '65532:65532'
-    container_name: locket-logging-stack
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
+  # meta service will be ignored by compose
+  .victorialogs:
+    image: docker.io/victoriametrics/victoria-logs:v1.51.0
     command:
-      - '--provider=op'
-      - '--mode=one-shot'
-      - '--inject-failure-policy=error'
-      - '--op-token=file:/run/secrets/op_token'
-      - '--secret=gf_admin_user={{ op://DockerSecrets/authdb/db }}'
-      - '--secret=gf_admin_pw={{ op://DockerSecrets/authdb/db }}'
-      - '--secret=influxdb_username={{ op://DockerSecrets/authdb/username }}'
-      - '--secret=influxdb_password={{ op://DockerSecrets/authdb/password }}'
-      - '--secret=influxdb_org={{ op://DockerSecrets/authdb/db }}'
-      - '--secret=influxdb_bucket={{ op://DockerSecrets/authdb/username }}'
-      - '--secret=influxdb_admin_token={{ op://DockerSecrets/authdb/password }}'
-    secrets:
-      - op_token
-    volumes:
-      - secrets-store-logs:/run/secrets/locket
+      - -storageDataPath=/vlogs
+      - -loggerFormat=json
+      - -datadog.streamFields=service,hostname,ddsource
+      - -journald.streamFields=_HOSTNAME,_SYSTEMD_UNIT,_PID
+      - -journald.ignoreFields=MESSAGE_ID,INVOCATION_ID,USER_INVOCATION_ID
+      - -journald.ignoreFields=_BOOT_ID,_MACHINE_ID,_SYSTEMD_INVOCATION_ID,_STREAM_ID,_UID
+    deploy:
+      replicas: 0
 
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    restart: unless-stopped
+  vmauth:
+    image: docker.io/victoriametrics/vmauth:v1.132.0
+    restart: on-failure
+    volumes:
+      - ./:/etc/vmauth
+    command: -auth.config=/etc/vmauth/vmauth.yml
     ports:
-      - '3000:3000'
-    environment:
-      - GF_SECURITY_ADMIN_USER=/run/secrets/locket/gf_admin_user
-      - GF_SECURITY_ADMIN_PASSWORD=/run/secrets/locket/gf_admin_pw
-      - GF_USERS_ALLOW_SIGN_UP=false
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./config/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - '8427:8427'
     depends_on:
-      - loki
-      - influxdb
+      victorialogs-1:
+        condition: service_started
+      victorialogs-2:
+        condition: service_started
 
-  alloy:
-    container_name: alloy
-    image: grafana/alloy:latest
-    restart: unless-stopped
+  victorialogs-1:
+    extends: .victorialogs
     volumes:
-      - ./config/alloy:/etc/alloy
-    environment:
-      LOKI_HOST: loki:3100
-    depends_on:
-      - loki
+      - victorialogs-1:/vlogs
+    deploy:
+      replicas: 1
+
+  victorialogs-2:
+    extends: .victorialogs
+    volumes:
+      - victorialogs-2:/vlogs
+    deploy:
+      replicas: 1
+
+  vlagent:
+    image: victoriametrics/vlagent:v1.51.0
+    volumes:
+      - vlagent:/vlagent
     command:
-      - run
-      - /etc/alloy/config.alloy
-      - --storage.path=/var/lib/alloy/data
-      - --server.http.listen-addr=0.0.0.0:12345
-      - --stability.level=stable
-    ports:
-      - '12345:12345'
-
-  loki:
-    image: grafana/loki:latest
-    container_name: loki
-    restart: unless-stopped
-    ports:
-      - '3100:3100'
-    command: -config.file=/etc/loki/local-config.yaml
-    volumes:
-      - ./loki/config/local-config.yaml:/etc/loki/local-config.yaml:ro
-      - loki_data:/loki
-
-  influxdb:
-    image: influxdb:latest
+      - '--remoteWrite.tmpDataPath=/vlagent'
+      - '--remoteWrite.url=http://victorialogs-1:9428/insert/native'
+      - '--remoteWrite.url=http://victorialogs-2:9428/insert/native'
+      - '--syslog.listenAddr.tcp=0.0.0.0:8094'
     depends_on:
-      locket:
-        condition: service_completed_successfully
-    container_name: influxdb
-    restart: unless-stopped
-    ports:
-      - '8086:8086'
-    environment:
-      - DOCKER_INFLUXDB_INIT_MODE=setup
-      - DOCKER_INFLUXDB_INIT_USERNAME=/run/secrets/locket/influxdb_username
-      - DOCKER_INFLUXDB_INIT_PASSWORD=/run/secrets/locket/influxdb_password
-      - DOCKER_INFLUXDB_INIT_ORG=/run/secrets/locket/influxdb_org
-      - DOCKER_INFLUXDB_INIT_BUCKET=/run/secrets/locket/influxdb_bucket
-      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=/run/secrets/locket/influxdb_admin_token
-    volumes:
-      - influxdb_data:/var/lib/influxdb2
+      victorialogs-1:
+        condition: service_started
+      victorialogs-2:
+        condition: service_started
 
-secrets:
-  op_token:
-    file: /etc/op/token
+  victoriametrics:
+    image: victoriametrics/victoria-metrics:v1.132.0
+    command:
+      - -storageDataPath=/vmsingle
+      - -loggerFormat=json
+    volumes:
+      - victoriametrics:/vmsingle
+
+  vector:
+    image: docker.io/timberio/vector:0.56.X-distroless-libc
+    restart: on-failure
+    volumes:
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+      - type: bind
+        source: /var/lib/docker
+        target: /var/lib/docker
+      - ${PWD}/vector.yml:/etc/vector/vector.yaml:ro
+    user: root
+    ports:
+      - '8686:8686'
+    depends_on:
+      vmauth:
+        condition: service_started
+      vlagent:
+        condition: service_started
+      victoriametrics:
+        condition: service_started
 
 volumes:
-  grafana_data:
-    driver: local
-  loki_data:
-    driver: local
-  influxdb_data:
-    driver: local
-  secrets-store-logs:
-    driver: local
-    driver_opts:
-      type: tmpfs
-      device: tmpfs
+  victorialogs-1:
+  victorialogs-2:
+  victoriametrics:
+  vlagent:
