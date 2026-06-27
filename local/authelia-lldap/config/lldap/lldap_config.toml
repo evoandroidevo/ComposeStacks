@@ -46,7 +46,7 @@ http_url = "{{ "op://DockerSecrets/authelia-lldap/lldap-http_url" }}"
 ## in the LLDAP_JWT_SECRET_FILE environment variable
 ## You can generate it with (on linux):
 ## LC_ALL=C tr -dc 'A-Za-z0-9!#%&'\''()*+,-./:;<=>?@[\]^_{|}~' </dev/urandom | head -c 32; echo ''
-jwt_secret = {{ "op://DockerSecrets/authelia-lldap/lldap-jwt_secret" }}
+jwt_secret = "{{ "op://DockerSecrets/authelia-lldap/lldap-jwt_secret" }}"
 
 ## Base DN for LDAP.
 ## This is usually your domain name, and is used as a
