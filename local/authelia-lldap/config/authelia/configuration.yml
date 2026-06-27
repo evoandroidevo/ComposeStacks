@@ -12,7 +12,7 @@ telemetry:
   metrics:
     enabled: false
 totp:
-  issuer: {{ "op://DockerSecrets/authelia-lldap/totp-issuer" }}
+  issuer: '{{ "op://DockerSecrets/authelia-lldap/totp-issuer" }}'
   algorithm: 'SHA1'
   digits: 6
   period: 30
@@ -22,7 +22,7 @@ theme: dark
 webauthn:
   disable: false
   timeout: '60 seconds'
-  display_name: {{ "op://DockerSecrets/authelia-lldap/webauthn-display_name" }}
+  display_name: '{{ "op://DockerSecrets/authelia-lldap/webauthn-display_name" }}'
   attestation_conveyance_preference: 'indirect'
   filtering:
     permitted_aaguids: []
@@ -50,7 +50,7 @@ identity_validation:
   reset_password:
     jwt_lifespan: '15 minutes'
     jwt_algorithm: 'HS256'
-    jwt_secret: {{ "op://DockerSecrets/authelia-lldap/identity_validation-reset_password-jwt_secret" }}
+    jwt_secret: '{{ "op://DockerSecrets/authelia-lldap/identity_validation-reset_password-jwt_secret" }}'
   elevated_session:
     code_lifespan: '5 minutes'
     elevation_lifespan: '15 minutes'
@@ -67,14 +67,14 @@ authentication_backend:
     address: ldap://lldap:3890
     timeout: 5s
     start_tls: false
-    base_dn: dc={{ "op://DockerSecrets/authelia-lldap/bbvutbry72dndqr4jb5ztnb6ly" }},dc={{ "op://DockerSecrets/authelia-lldap/fn6td4aiimcj4ee37uc5njqn74" }}
+    base_dn: 'dc={{ "op://DockerSecrets/authelia-lldap/bbvutbry72dndqr4jb5ztnb6ly" }},dc={{ "op://DockerSecrets/authelia-lldap/fn6td4aiimcj4ee37uc5njqn74" }}'
     additional_users_dn: ou=people
     users_filter: "(&(|({username_attribute}={input})({mail_attribute}={input}))(objectClass=person))"
     additional_groups_dn: ou=groups
     groups_filter: "(member={dn})"
     group_search_mode: 'filter'
-    user: {{ "op://DockerSecrets/authelia-lldap/authentication_backend-ldap-user" }}
-    password: {{ "op://DockerSecrets/authelia-lldap/authentication_backend-ldap-password" }}
+    user: '{{ "op://DockerSecrets/authelia-lldap/authentication_backend-ldap-user" }}'
+    password: '{{ "op://DockerSecrets/authelia-lldap/authentication_backend-ldap-password" }}'
     attributes:
       distinguished_name: 'distinguishedName'
       username: 'uid'
@@ -111,16 +111,16 @@ access_control:
 
 session:
   name: authelia_session
-  secret: {{ op://DockerSecrets/authelia-lldap/jcv3xxyh4ixy32wbt7lgkzhlsq }}
+  secret: '{{ op://DockerSecrets/authelia-lldap/jcv3xxyh4ixy32wbt7lgkzhlsq }}'
   expiration: '3h'
   inactivity: '15m'
   remember_me: '1M'
   same_site: 'lax'
   cookies:
-    - domain: {{ "op://DockerSecrets/authelia-lldap/session-cookies-domain" }}
+    - domain: '{{ "op://DockerSecrets/authelia-lldap/session-cookies-domain" }}'
       name: 'authelia_session'
-      authelia_url: {{ "op://DockerSecrets/authelia-lldap/session-cookies-authelia_url" }}
-      default_redirection_url: {{ "op://DockerSecrets/authelia-lldap/session-cookies-default_redirection_url" }}
+      authelia_url: '{{ "op://DockerSecrets/authelia-lldap/session-cookies-authelia_url" }}'
+      default_redirection_url: '{{ "op://DockerSecrets/authelia-lldap/session-cookies-default_redirection_url" }}'
       same_site: 'lax'
       inactivity: '5 minutes'
       expiration: '1 hour'
@@ -137,20 +137,20 @@ regulation:
   ban_time: 72h
 
 storage:
-  encryption_key: {{ "op://DockerSecrets/authelia-lldap/storeage-encryption_key" }}
+  encryption_key: '{{ "op://DockerSecrets/authelia-lldap/storeage-encryption_key" }}'
   postgres:
     address: 'tcp://authdb:5432'
-    database: {{ "op://DockerSecrets/authelia-lldap/storeage-postgres-database" }}
+    database: '{{ "op://DockerSecrets/authelia-lldap/storeage-postgres-database" }}'
     schema: 'public'
-    username: {{ "op://DockerSecrets/authelia-lldap/storeage-postgres-username" }}
-    password: {{ "op://DockerSecrets/authelia-lldap/storeage-postgres-password" }}
+    username: '{{ "op://DockerSecrets/authelia-lldap/storeage-postgres-username" }}'
+    password: '{{ "op://DockerSecrets/authelia-lldap/storeage-postgres-password" }}'
     timeout: '5s'        
 
 notifier:
   disable_startup_check: false
   smtp:
-    username: {{ "op://DockerSecrets/authelia-lldap/notifier-smtp-username" }}
-    password: {{ "op://DockerSecrets/authelia-lldap/notifier-smtp-password" }}
+    username: '{{ "op://DockerSecrets/authelia-lldap/notifier-smtp-username" }}'
+    password: '{{ "op://DockerSecrets/authelia-lldap/notifier-smtp-password" }}'
     address: 'smtp://mail.smtp2go.com:587'
     subject: "[{{ op://DockerSecrets/authelia-lldap/notifier-smtp-subject }}] {title}"
     sender: "Admin <{{ op://DockerSecrets/authelia-lldap/notifier-smtp-sender }}>"
@@ -177,7 +177,7 @@ identity_providers:
         - revocation
         - introspection
       allowed_origins:
-        - {{ op://DockerSecrets/authelia-lldap/identity_providers-oidc-cors-allowed_origins }}
+        - '{{ op://DockerSecrets/authelia-lldap/identity_providers-oidc-cors-allowed_origins }}'
       allowed_origins_from_client_redirect_uris: false
     clients:
       - client_id: 4tXYBB2faJHB2WTWxqvGqoNJpApEY.Proxmox
@@ -188,7 +188,7 @@ identity_providers:
         authorization_policy: two_factor
         pre_configured_consent_duration: 1w
         redirect_uris:
-          - {{ op://DockerSecrets/authelia-lldap/identity_providers-oidc-clients-redirect_uris }}
+          - '{{ op://DockerSecrets/authelia-lldap/identity_providers-oidc-clients-redirect_uris }}'
         scopes:
           - openid
           - profile
