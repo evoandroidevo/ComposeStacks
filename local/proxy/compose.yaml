@@ -1,0 +1,101 @@
+networks:
+  proxy-network:
+    external: true
+
+services:
+  locket:
+    image: ghcr.io/bpbradley/locket:op
+    user: "65532:0"
+    container_name: locket-auth
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    command:
+      - "--provider=op"
+      # one-shot removes the secrets before they can be imported switching to park.
+      - "--mode=park"
+      - "--inject-failure-policy=error"
+      - "--log-level=info"
+      - "--user=65532:1000"
+      # -r--r--r-- file mode
+      - "--file-mode=0444"
+      - "--dir-mode=0777"
+      - "--op-token=file:/run/secrets/op_token"
+      - "--secret=tunnel_token={{ op://DockerSecrets/Proxy-config/cf-token }}"
+      - "--map=/caddy:/run/secrets/locket/caddy"
+    secrets:
+      - op_token
+    volumes:
+      # Mount in your actual secret templates, with secret references
+      - ./config/caddy:/caddy:ro
+      # Mount in your output directory, where you want secrets materialized
+      - secrets-store-proxy:/run/secrets/locket
+
+  cloudflare-tunnel:
+    image: cloudflare/cloudflared:latest # Pull the latest version of the Cloudflare Tunnel image
+    container_name: cloudflare-tunnel # Name of the Cloudflare Tunnel container
+    hostname: cloudflare-tunnel # Hostname for the Cloudflare Tunnel container
+    restart: unless-stopped # Restart the container unless manually stopped
+    command: tunnel run # Command to start the Cloudflare tunnel
+    volumes:
+      - /etc/localtime:/etc/localtime:ro # Synchronize time with the host
+      - ./config/hosts:/etc/hosts # Mount hosts file from host to container
+    environment:
+      - "TUNNEL_TOKEN_FILE=/run/secret/tunnel_token" # Pass the Cloudflare Tunnel token from environment variable
+    healthcheck:
+      test: ["CMD", "cloudflared", "--version"] # Check if cloudflared version command works
+      interval: 30s # Time between health check attempts
+      timeout: 10s # Time to wait for a response
+      retries: 3 # Number of retries before marking as unhealthy
+      start_period: 10s # Delay before health checks begin # Enable automatic updates with Watchtower
+
+services:
+  caddy:
+    build:
+      context: .
+    dockerfile_inline: |
+      # Stage 1: Build Caddy with custom modules using xcaddy
+      FROM caddy:2-builder AS builder
+      RUN xcaddy build \
+          --with github.com/caddy-dns/cloudflare \
+          --with github.com/kassner/caddy-trapdoor
+      # Stage 2: Create the final lightweight image
+      FROM caddy:2
+      # Copy the custom compiled binary from the builder stage
+      COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+      FROM baseimage
+      RUN some command
+
+    restart: unless-stopped
+    container_name: caddy-reverse-proxy
+    cap_add:
+      - NET_ADMIN
+    expose:
+      - 80
+      - 443
+      - 443/udp
+    volumes:
+      - type: volume
+        source: secrets-store-proxy
+        target: /etc/caddy
+        volume:
+          subpath: caddy
+      - caddy_data:/data
+      - caddy_config:/config
+
+secrets:
+  op_token:
+    file: /etc/op/token
+
+volumes:
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local
+  secrets-store-proxy:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: uid=65532,gid=1000,mode=740
