@@ -1,0 +1,14 @@
+# https://docs.crowdsec.net/docs/next/log_processor/data_sources/victorialogs/
+source: victorialogs
+mode: tail
+log_level: info
+url: http://localhost:9428/
+limit: 1000
+# https://docs.victoriametrics.com/victorialogs/querying/#live-tailing
+query: |
+  app:nginx
+auth:
+  username: something
+  password: secret
+labels:
+  type: nginx

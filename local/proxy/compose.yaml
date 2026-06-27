@@ -57,9 +57,15 @@ services:
     dockerfile_inline: |
       # Stage 1: Build Caddy with custom modules using xcaddy
       FROM caddy:2-builder AS builder
+      # bouncer 2 https://app.crowdsec.net/hub/author/hslatman/remediation-components/caddy-crowdsec-bouncer
       RUN xcaddy build \
           --with github.com/caddy-dns/cloudflare \
-          --with github.com/kassner/caddy-trapdoor
+          --with github.com/kassner/caddy-trapdoor \
+          --with github.com/mholt/caddy-l4 \
+          --with github.com/caddyserver/transform-encoder \
+          --with github.com/hslatman/caddy-crowdsec-bouncer/http@main \
+          --with github.com/hslatman/caddy-crowdsec-bouncer/appsec@main \
+          --with github.com/hslatman/caddy-crowdsec-bouncer/layer4@main
       # Stage 2: Create the final lightweight image
       FROM caddy:2
       # Copy the custom compiled binary from the builder stage
@@ -84,6 +90,32 @@ services:
       - caddy_data:/data
       - caddy_config:/config
 
+  #https://docs.crowdsec.net/u/getting_started/installation/docker
+  crowdsec:
+    image: crowdsecurity/crowdsec
+    restart: always
+    ports:
+      - 127.0.0.1:8080:8080
+    environment:
+      COLLECTIONS:
+      GID:
+      TZ: America/Chicago
+    volumes:
+      - ./crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml
+      - logs:/var/log/nginx
+      - crowdsec-db:/var/lib/crowdsec/data/
+      - crowdsec-config:/etc/crowdsec/
+
+  bouncer1:
+    #https://app.crowdsec.net/hub/author/Teifun2/remediation-components/cs-unifi-bouncer
+    image: ghcr.io/teifun2/cs-unifi-bouncer
+    enviroment:
+      #required vars
+      CROWDSEC_BOUNCER_API_KEY:
+      CROWDSEC_URL:
+      UNIFI_HOST:
+      UNIFI_API_KEY:
+
 secrets:
   op_token:
     file: /etc/op/token
@@ -92,6 +124,10 @@ volumes:
   caddy_data:
     driver: local
   caddy_config:
+    driver: local
+  crowdsec-db:
+    driver: local
+  crowdsec-config:
     driver: local
   secrets-store-proxy:
     driver: local
