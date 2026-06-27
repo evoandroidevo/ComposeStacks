@@ -98,7 +98,7 @@ services:
       GID: 1000
       TZ: America/Chicago
     healthcheck:
-      test: ["/app/lldap", "healthcheck", "--config-file", "/config/lldap_config.toml"]
+      test: ["CMD", "/app/lldap", "healthcheck", "--config-file", "/config/lldap_config.toml"]
       interval: 10s
       retries: 5
       start_period: 30s
