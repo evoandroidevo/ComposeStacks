@@ -41,8 +41,14 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro # Synchronize time with the host
       - ./config/hosts:/etc/hosts # Mount hosts file from host to container
+      - type: volume
+        source: secrets-store-proxy
+        target: /run/secrets/tunnel_token
+        read_only: true
+        volume:
+          subpath: tunnel_token
     environment:
-      - "TUNNEL_TOKEN_FILE=/run/secret/tunnel_token" # Pass the Cloudflare Tunnel token from environment variable
+      - "TUNNEL_TOKEN_FILE=/run/secrets/tunnel_token" # Pass the Cloudflare Tunnel token from environment variable
     healthcheck:
       test: ["CMD", "cloudflared", "--version"] # Check if cloudflared version command works
       interval: 30s # Time between health check attempts
@@ -93,28 +99,28 @@ services:
   #https://docs.crowdsec.net/u/getting_started/installation/docker
   crowdsec:
     image: crowdsecurity/crowdsec
+    container_name: crowdsec-proxy
     restart: always
-    ports:
-      - 127.0.0.1:8080:8080
+    expose:
+      - 8080
     environment:
       COLLECTIONS:
-      GID:
+      GID: 1000
+      UID: 1000
       TZ: America/Chicago
     volumes:
       - ./crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml
-      - logs:/var/log/nginx
       - crowdsec-db:/var/lib/crowdsec/data/
       - crowdsec-config:/etc/crowdsec/
 
   bouncer1:
     #https://app.crowdsec.net/hub/author/Teifun2/remediation-components/cs-unifi-bouncer
     image: ghcr.io/teifun2/cs-unifi-bouncer
+    container_name: unifi-bouncer
     enviroment:
-      #required vars
-      CROWDSEC_BOUNCER_API_KEY:
-      CROWDSEC_URL:
-      UNIFI_HOST:
-      UNIFI_API_KEY:
+      UNIFI_POLICY_REORDERING: true
+      UNIFI_LOG_CLEANUP: true
+      ENABLE_METRICS: true
 
 secrets:
   op_token:
@@ -134,4 +140,4 @@ volumes:
     driver_opts:
       type: tmpfs
       device: tmpfs
-      o: uid=65532,gid=1000,mode=740
+      o: uid=65532,gid=0,mode=760
