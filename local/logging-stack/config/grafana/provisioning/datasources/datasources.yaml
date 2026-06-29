@@ -1,11 +1,5 @@
 apiVersion: 1
 datasources:
-  - name: Loki
-    type: loki
-    access: proxy
-    url: http://loki:3100
-    isDefault: true
-
   - name: InfluxDB
     type: influxdb
     access: proxy
@@ -16,3 +10,7 @@ datasources:
       organization: myorg
     secureJsonData:
       token: influx-token
+      
+  - name: Victoria Logs
+    type: prometheus
+    
