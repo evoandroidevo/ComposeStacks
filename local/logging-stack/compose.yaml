@@ -1,71 +1,26 @@
 services:
-  # meta service will be ignored by compose
-  .victorialogs:
-    image: docker.io/victoriametrics/victoria-logs:v1.51.0
-    command:
-      - -storageDataPath=/vlogs
-      - -loggerFormat=json
-      - -datadog.streamFields=service,hostname,ddsource
-      - -journald.streamFields=_HOSTNAME,_SYSTEMD_UNIT,_PID
-      - -journald.ignoreFields=MESSAGE_ID,INVOCATION_ID,USER_INVOCATION_ID
-      - -journald.ignoreFields=_BOOT_ID,_MACHINE_ID,_SYSTEMD_INVOCATION_ID,_STREAM_ID,_UID
-    deploy:
-      replicas: 0
-
-  vmauth:
-    image: docker.io/victoriametrics/vmauth:v1.132.0
-    restart: on-failure
-    volumes:
-      - ./config/victorialogs-vector/vector.yaml:/etc/vmauth/vmauth.yml
-    command: -auth.config=/etc/vmauth/vmauth.yml
+  # Grafana instance configured with VictoriaLogs as datasource
+  grafana:
+    image: grafana/grafana:12.4.5
+    depends_on:
+      - "victoriametrics"
+      - "victorialogs"
     ports:
-      - "8427:8427"
-    depends_on:
-      victorialogs-1:
-        condition: service_started
-      victorialogs-2:
-        condition: service_started
-
-  victorialogs-1:
-    extends: .victorialogs
+      - 3000:3000
     volumes:
-      - victorialogs-1:/vlogs
-    deploy:
-      replicas: 1
+      - grafanadata:/var/lib/grafana
+      - ./config/grafana/provisioning/datasources/victoriametrics-logs-datasource/single.yml:/etc/grafana/provisioning/datasources/single.yml
+      - ./config/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./config/grafana/dashboards/victorialogs.json:/var/lib/grafana/dashboards/victorialogs.json
+      - ./config/grafana/dashboards/victorialogs-internal.json:/var/lib/grafana/dashboards/victorialogs-internal.json
+    environment:
+      - "GF_INSTALL_PLUGINS=victoriametrics-logs-datasource"
+    restart: always
 
-  victorialogs-2:
-    extends: .victorialogs
-    volumes:
-      - victorialogs-2:/vlogs
-    deploy:
-      replicas: 1
-
-  vlagent:
-    image: victoriametrics/vlagent:v1.51.0
-    volumes:
-      - vlagent:/vlagent
-    command:
-      - "--remoteWrite.tmpDataPath=/vlagent"
-      - "--remoteWrite.url=http://victorialogs-1:9428/insert/native"
-      - "--remoteWrite.url=http://victorialogs-2:9428/insert/native"
-      - "--syslog.listenAddr.tcp=0.0.0.0:8094"
-    depends_on:
-      victorialogs-1:
-        condition: service_started
-      victorialogs-2:
-        condition: service_started
-
-  victoriametrics:
-    image: victoriametrics/victoria-metrics:v1.132.0
-    command:
-      - -storageDataPath=/vmsingle
-      - -loggerFormat=json
-    volumes:
-      - victoriametrics:/vmsingle
-
+  # vector is logs collector. It collects logs according to vector.yml
+  # and forwards them to VictoriaLogs
   vector:
     image: docker.io/timberio/vector:0.56.X-distroless-libc
-    restart: on-failure
     volumes:
       - type: bind
         source: /var/run/docker.sock
@@ -73,34 +28,98 @@ services:
       - type: bind
         source: /var/lib/docker
         target: /var/lib/docker
-      - ./config/victorialogs-vector/vector.yaml:/etc/vector/vector.yaml:ro
-    user: root
+      - ./vector-vl-single.yml:/etc/vector/vector.yaml:ro
+    depends_on: [victorialogs]
     ports:
       - "8686:8686"
-    depends_on:
-      vmauth:
-        condition: service_started
-      vlagent:
-        condition: service_started
-      victoriametrics:
-        condition: service_started
+    user: root
+    restart: always
 
-  grafana:
-    image: grafana/grafana-enterprise:latest
-    container_name: grafana
-    restart: unless-stopped
+  #  VictoriaLogs instance, a single process responsible for
+  #  storing logs and serving read queries.
+  victorialogs:
+    image: victoriametrics/victoria-logs:v1.51.0
     ports:
-      - "3000:3000"
-    environment:
-      GF_SECURITY_ADMIN_USER_FILE: admin
-      GF_SECURITY_ADMIN_PASSWORD_FILE: your_secure_password
-      GF_USERS_ALLOW_SIGN_UP: false
+      - "9428:9428"
+    command:
+      - "--storageDataPath=/vlogs"
     volumes:
-      - grafana-storage:/var/lib/grafana
+      - vldata:/vlogs
+    restart: always
+
+  # VictoriaMetrics instance, a single process responsible for
+  # scraping, storing metrics and serve read requests.
+  victoriametrics:
+    image: victoriametrics/victoria-metrics:v1.146.0
+    ports:
+      - "8428:8428"
+    volumes:
+      - vmdata:/storage
+      - ./config/victoriametrics/prometheus-vl-single.yml:/etc/prometheus/prometheus.yml
+    command:
+      - "--storageDataPath=/storage"
+      - "--promscrape.config=/etc/prometheus/prometheus.yml"
+      - "--vmalert.proxyURL=http://vmalert:8880"
+    restart: always
+
+  # vmauth is a router and balancer for HTTP requests.
+  # It proxies query requests from vmalert to either VictoriaMetrics or VictoriaLogs,
+  # depending on the requested path.
+  vmauth:
+    image: victoriametrics/vmauth:v1.146.0
+    depends_on:
+      - "victoriametrics"
+      - "victorialogs"
+    volumes:
+      - ./config/vmauth/auth-vl-single.yml:/etc/auth.yml
+    command:
+      - "--auth.config=/etc/auth.yml"
+    ports:
+      - 8427:8427
+    restart: always
+
+  # vmalert executes alerting and recording rules according to the given rule type.
+  vmalert:
+    image: victoriametrics/vmalert:v1.146.0
+    depends_on:
+      - "vmauth"
+      - "alertmanager"
+      - "victoriametrics"
+    ports:
+      - 8880:8880
+    volumes:
+      - ./config/vmalert/rules/alerts-vlogs.yml:/etc/alerts/vlogs.yml
+      - ./config/vmalert/rules/alerts-health.yml:/etc/alerts/alerts-health.yml
+      # vlogs rule
+      - ./config/vmalert/vlogs-example-alerts.yml:/etc/alerts/vlogs-example-alerts.yml
+    command:
+      # it evaluates data against VictoriaMetrics and VictoriaLogs
+      # vmauth routes queries to corresponding datasource based on API path
+      - "--datasource.url=http://vmauth:8427/"
+      # results of alerting and recording rules are persisted to VictoriaMetrics only
+      - "--remoteWrite.url=http://victoriametrics:8428/"
+      # alerts state is restored from VictoriaMetrics on restarts
+      - "--remoteRead.url=http://victoriametrics:8428/"
+      - "--notifier.url=http://alertmanager:9093/"
+      - "--rule=/etc/alerts/*.yml"
+      # display source of alerts in grafana
+      - "--external.url=http://127.0.0.1:3000" #grafana outside container
+      - '--external.alert.source=explore?orgId=1&left={"datasource":"{{ if eq .Type "vlogs" }}VictoriaLogs{{ else }}VictoriaMetrics{{ end }}","queries":[{"expr":{{.Expr|jsonEscape|queryEscape}},"refId":"A"}],"range":{"from":"{{ .ActiveAt.UnixMilli }}","to":"now"}}'
+    restart: always
+
+  # alertmanager receives alerting notifications from vmalert
+  # and distributes them according to --config.file.
+  alertmanager:
+    image: prom/alertmanager:v0.33.0
+    volumes:
+      - ./config/alertmanager/alertmanager.yml:/config/alertmanager.yml
+    command:
+      - "--config.file=/config/alertmanager.yml"
+    ports:
+      - 9093:9093
+    restart: always
 
 volumes:
-  victorialogs-1:
-  victorialogs-2:
-  victoriametrics:
-  vlagent:
-  grafana-storage:
+  vmdata: {}
+  vldata: {}
+  grafanadata: {}
