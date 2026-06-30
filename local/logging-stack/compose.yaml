@@ -6,7 +6,7 @@ services:
       - "victoriametrics"
       - "victorialogs"
     ports:
-      - 3000:3000
+      - 3001:3000
     volumes:
       - grafanadata:/var/lib/grafana
       - ./config/grafana/provisioning/datasources/victoriametrics-logs-datasource/single.yml:/etc/grafana/provisioning/datasources/single.yml
