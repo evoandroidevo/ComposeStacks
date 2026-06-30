@@ -49,6 +49,8 @@ services:
           subpath: tunnel_token
     environment:
       - "TUNNEL_TOKEN_FILE=/run/secrets/tunnel_token" # Pass the Cloudflare Tunnel token from environment variable
+    networks:
+      - default
     healthcheck:
       test: ["CMD", "cloudflared", "--version"] # Check if cloudflared version command works
       interval: 30s # Time between health check attempts
