@@ -13,7 +13,7 @@ services:
       - "--mode=park"
       - "--inject-failure-policy=error"
       - "--log-level=info"
-      - "--user=65532:1000"
+      - "--user=65532:0"
       # -r--r--r-- file mode
       - "--file-mode=0664"
       - "--dir-mode=0777"
