@@ -2,7 +2,7 @@
 source: victorialogs
 mode: tail
 log_level: info
-url: http://localhost:9428/
+url: http://victorialogs:9428/
 limit: 1000
 # https://docs.victoriametrics.com/victorialogs/querying/#live-tailing
 query: |
