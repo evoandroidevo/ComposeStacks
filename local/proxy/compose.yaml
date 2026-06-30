@@ -130,6 +130,8 @@ networks:
   default: {}
   proxy:
     external: true
+  logging-network:
+    external: true
 
 volumes:
   caddy_data:
