@@ -33,6 +33,9 @@ services:
     container_name: cloudflare-tunnel # Name of the Cloudflare Tunnel container
     hostname: cloudflare-tunnel # Hostname for the Cloudflare Tunnel container
     restart: unless-stopped # Restart the container unless manually stopped
+    depends_on:
+      locket:
+        condition: service_healthy
     command: tunnel run # Command to start the Cloudflare tunnel
     volumes:
       - /etc/localtime:/etc/localtime:ro # Synchronize time with the host
@@ -73,6 +76,9 @@ services:
           COPY --from=builder /usr/bin/caddy /usr/bin/caddy
     restart: unless-stopped
     container_name: caddy-reverse-proxy
+    depends_on:
+      locket:
+        condition: service_healthy
     cap_add:
       - NET_ADMIN
     expose:
