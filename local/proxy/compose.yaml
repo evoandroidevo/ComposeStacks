@@ -112,6 +112,9 @@ services:
       - ./config/crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml
       - crowdsec-db:/var/lib/crowdsec/data/
       - crowdsec-config:/etc/crowdsec/
+    networks:
+      - default
+      - logging-network
 
 #  bouncer1:
     #https://app.crowdsec.net/hub/author/Teifun2/remediation-components/cs-unifi-bouncer
