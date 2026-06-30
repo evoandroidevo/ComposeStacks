@@ -4,10 +4,8 @@ api:
 sources:
   docker:
     type: docker_logs
-  demo:
-    type: demo_logs
-    format: apache_common
-    interval: 10
+    exclude_containers:
+      - socket-proxy
   vector_metrics:
     type: internal_metrics
 transforms:
