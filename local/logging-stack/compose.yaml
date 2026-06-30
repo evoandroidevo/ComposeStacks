@@ -46,6 +46,9 @@ services:
     volumes:
       - vldata:/vlogs
     restart: always
+    networks:
+      - default
+      - logging-network
 
   # VictoriaMetrics instance, a single process responsible for
   # scraping, storing metrics and serve read requests.
