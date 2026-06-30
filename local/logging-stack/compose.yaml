@@ -103,3 +103,4 @@ volumes:
   victorialogs-2:
   victoriametrics:
   vlagent:
+  grafana-storage:
