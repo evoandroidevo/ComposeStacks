@@ -55,25 +55,24 @@ services:
   caddy:
     build:
       context: .
-    dockerfile_inline: |
-      # Stage 1: Build Caddy with custom modules using xcaddy
-      FROM caddy:2-builder AS builder
-      # bouncer 2 https://app.crowdsec.net/hub/author/hslatman/remediation-components/caddy-crowdsec-bouncer
-      RUN xcaddy build \
-          --with github.com/caddy-dns/cloudflare \
-          --with github.com/kassner/caddy-trapdoor \
-          --with github.com/mholt/caddy-l4 \
-          --with github.com/caddyserver/transform-encoder \
-          --with github.com/hslatman/caddy-crowdsec-bouncer/http@main \
-          --with github.com/hslatman/caddy-crowdsec-bouncer/appsec@main \
-          --with github.com/hslatman/caddy-crowdsec-bouncer/layer4@main
-      # Stage 2: Create the final lightweight image
-      FROM caddy:2
-      # Copy the custom compiled binary from the builder stage
-      COPY --from=builder /usr/bin/caddy /usr/bin/caddy
-      FROM baseimage
-      RUN some command
-
+      dockerfile_inline: |
+          # Stage 1: Build Caddy with custom modules using xcaddy
+          FROM caddy:2-builder AS builder
+          # bouncer 2 https://app.crowdsec.net/hub/author/hslatman/remediation-components/caddy-crowdsec-bouncer
+          RUN xcaddy build \
+              --with github.com/caddy-dns/cloudflare \
+              --with github.com/kassner/caddy-trapdoor \
+              --with github.com/mholt/caddy-l4 \
+              --with github.com/caddyserver/transform-encoder \
+              --with github.com/hslatman/caddy-crowdsec-bouncer/http@main \
+              --with github.com/hslatman/caddy-crowdsec-bouncer/appsec@main \
+              --with github.com/hslatman/caddy-crowdsec-bouncer/layer4@main
+          # Stage 2: Create the final lightweight image
+          FROM caddy:2
+          # Copy the custom compiled binary from the builder stage
+          COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+          FROM baseimage
+          RUN some command
     restart: unless-stopped
     container_name: caddy-reverse-proxy
     cap_add:
