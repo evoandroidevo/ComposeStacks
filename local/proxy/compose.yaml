@@ -15,7 +15,7 @@ services:
       - "--log-level=info"
       - "--user=65532:1000"
       # -r--r--r-- file mode
-      - "--file-mode=0444"
+      - "--file-mode=0664"
       - "--dir-mode=0777"
       - "--op-token=file:/run/secrets/op_token"
       - "--secret=tunnel_token={{ op://DockerSecrets/Proxy-config/cf-token }}"
