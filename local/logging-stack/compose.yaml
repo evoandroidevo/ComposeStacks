@@ -119,6 +119,11 @@ services:
       - 9093:9093
     restart: always
 
+networks:
+  default: {}
+  logging-network:
+    external: true
+
 volumes:
   vmdata: {}
   vldata: {}
