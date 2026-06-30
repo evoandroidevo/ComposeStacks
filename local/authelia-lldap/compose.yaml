@@ -70,7 +70,7 @@ services:
       timeout: 10s
 
   lldap:
-    image: stable-alpine-rootless
+    image: lldap/lldap:stable-alpine-rootless
     depends_on:
       locket:
         condition: service_healthy
