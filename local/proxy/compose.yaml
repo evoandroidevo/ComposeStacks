@@ -71,8 +71,6 @@ services:
           FROM caddy:2
           # Copy the custom compiled binary from the builder stage
           COPY --from=builder /usr/bin/caddy /usr/bin/caddy
-          FROM baseimage
-          RUN some command
     restart: unless-stopped
     container_name: caddy-reverse-proxy
     cap_add:
