@@ -39,7 +39,6 @@ services:
     command: tunnel run # Command to start the Cloudflare tunnel
     volumes:
       - /etc/localtime:/etc/localtime:ro # Synchronize time with the host
-      - ./config/hosts:/etc/hosts # Mount hosts file from host to container
       - type: volume
         source: secrets-store-proxy
         target: /run/secrets/tunnel_token
