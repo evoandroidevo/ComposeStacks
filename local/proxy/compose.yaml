@@ -111,14 +111,14 @@ services:
       - crowdsec-db:/var/lib/crowdsec/data/
       - crowdsec-config:/etc/crowdsec/
 
-  bouncer1:
+#  bouncer1:
     #https://app.crowdsec.net/hub/author/Teifun2/remediation-components/cs-unifi-bouncer
-    image: ghcr.io/teifun2/cs-unifi-bouncer
-    container_name: unifi-bouncer
-    enviroment:
-      UNIFI_POLICY_REORDERING: true
-      UNIFI_LOG_CLEANUP: true
-      ENABLE_METRICS: true
+#    image: ghcr.io/teifun2/cs-unifi-bouncer
+#    container_name: unifi-bouncer
+#    enviroment:
+#      UNIFI_POLICY_REORDERING: true
+#      UNIFI_LOG_CLEANUP: true
+#      ENABLE_METRICS: true
 
 secrets:
   op_token:
