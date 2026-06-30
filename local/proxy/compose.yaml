@@ -36,6 +36,8 @@ services:
     depends_on:
       locket:
         condition: service_healthy
+      caddy:
+        condition: service_healthy
     command: tunnel run # Command to start the Cloudflare tunnel
     volumes:
       - /etc/localtime:/etc/localtime:ro # Synchronize time with the host
@@ -53,26 +55,26 @@ services:
       timeout: 10s # Time to wait for a response
       retries: 3 # Number of retries before marking as unhealthy
       start_period: 10s # Delay before health checks begin # Enable automatic updates with Watchtower
-      
+
   caddy:
     build:
       context: .
       dockerfile_inline: |
-          # Stage 1: Build Caddy with custom modules using xcaddy
-          FROM caddy:2-builder AS builder
-          # bouncer 2 https://app.crowdsec.net/hub/author/hslatman/remediation-components/caddy-crowdsec-bouncer
-          RUN xcaddy build \
-              --with github.com/caddy-dns/cloudflare \
-              --with github.com/kassner/caddy-trapdoor \
-              --with github.com/mholt/caddy-l4 \
-              --with github.com/caddyserver/transform-encoder \
-              --with github.com/hslatman/caddy-crowdsec-bouncer/http@main \
-              --with github.com/hslatman/caddy-crowdsec-bouncer/appsec@main \
-              --with github.com/hslatman/caddy-crowdsec-bouncer/layer4@main
-          # Stage 2: Create the final lightweight image
-          FROM caddy:2
-          # Copy the custom compiled binary from the builder stage
-          COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+        # Stage 1: Build Caddy with custom modules using xcaddy
+        FROM caddy:2-builder AS builder
+        # bouncer 2 https://app.crowdsec.net/hub/author/hslatman/remediation-components/caddy-crowdsec-bouncer
+        RUN xcaddy build \
+            --with github.com/caddy-dns/cloudflare \
+            --with github.com/kassner/caddy-trapdoor \
+            --with github.com/mholt/caddy-l4 \
+            --with github.com/caddyserver/transform-encoder \
+            --with github.com/hslatman/caddy-crowdsec-bouncer/http@main \
+            --with github.com/hslatman/caddy-crowdsec-bouncer/appsec@main \
+            --with github.com/hslatman/caddy-crowdsec-bouncer/layer4@main
+        # Stage 2: Create the final lightweight image
+        FROM caddy:2
+        # Copy the custom compiled binary from the builder stage
+        COPY --from=builder /usr/bin/caddy /usr/bin/caddy
     restart: unless-stopped
     container_name: caddy-reverse-proxy
     depends_on:
@@ -117,7 +119,7 @@ services:
       - logging-network
 
 #  bouncer1:
-    #https://app.crowdsec.net/hub/author/Teifun2/remediation-components/cs-unifi-bouncer
+#https://app.crowdsec.net/hub/author/Teifun2/remediation-components/cs-unifi-bouncer
 #    image: ghcr.io/teifun2/cs-unifi-bouncer
 #    container_name: unifi-bouncer
 #    enviroment:
