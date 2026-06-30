@@ -16,10 +16,10 @@ services:
     image: docker.io/victoriametrics/vmauth:v1.132.0
     restart: on-failure
     volumes:
-      - ./:/etc/vmauth
+      - ./config/victorialogs-vector/vector.yaml:/etc/vmauth/vmauth.yml
     command: -auth.config=/etc/vmauth/vmauth.yml
     ports:
-      - '8427:8427'
+      - "8427:8427"
     depends_on:
       victorialogs-1:
         condition: service_started
@@ -45,10 +45,10 @@ services:
     volumes:
       - vlagent:/vlagent
     command:
-      - '--remoteWrite.tmpDataPath=/vlagent'
-      - '--remoteWrite.url=http://victorialogs-1:9428/insert/native'
-      - '--remoteWrite.url=http://victorialogs-2:9428/insert/native'
-      - '--syslog.listenAddr.tcp=0.0.0.0:8094'
+      - "--remoteWrite.tmpDataPath=/vlagent"
+      - "--remoteWrite.url=http://victorialogs-1:9428/insert/native"
+      - "--remoteWrite.url=http://victorialogs-2:9428/insert/native"
+      - "--syslog.listenAddr.tcp=0.0.0.0:8094"
     depends_on:
       victorialogs-1:
         condition: service_started
@@ -73,10 +73,10 @@ services:
       - type: bind
         source: /var/lib/docker
         target: /var/lib/docker
-      - ${PWD}/vector.yml:/etc/vector/vector.yaml:ro
+      - ./config/victorialogs-vector/vector.yaml:/etc/vector/vector.yaml:ro
     user: root
     ports:
-      - '8686:8686'
+      - "8686:8686"
     depends_on:
       vmauth:
         condition: service_started
@@ -84,6 +84,19 @@ services:
         condition: service_started
       victoriametrics:
         condition: service_started
+
+  grafana:
+    image: grafana/grafana-enterprise:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER_FILE: admin
+      GF_SECURITY_ADMIN_PASSWORD_FILE: your_secure_password
+      GF_USERS_ALLOW_SIGN_UP: false
+    volumes:
+      - grafana-storage:/var/lib/grafana
 
 volumes:
   victorialogs-1:
