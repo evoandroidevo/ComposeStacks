@@ -1,16 +1,12 @@
 apiVersion: 1
+
 datasources:
-  - name: InfluxDB
-    type: influxdb
+  - name: VictoriaLogs
+    type: victoriametrics-logs-datasource
     access: proxy
-    url: http://influxdb:8086
-    version: Flux
-    isDefault: false
-    jsonData:
-      organization: myorg
-    secureJsonData:
-      token: influx-token
-      
-  - name: Victoria Logs
+    url:  http://vmauth:8427/
+
+  - name: VictoriaMetrics
     type: prometheus
-    
+    access: proxy
+    url: http://vmauth:8427/
