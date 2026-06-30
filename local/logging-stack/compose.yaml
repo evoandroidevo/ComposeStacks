@@ -28,7 +28,7 @@ services:
       - type: bind
         source: /var/lib/docker
         target: /var/lib/docker
-      - ./vector-vl-single.yml:/etc/vector/vector.yaml:ro
+      - ./config/vector/vector-vl-single.yml:/etc/vector/vector.yaml:ro
     depends_on: [victorialogs]
     ports:
       - "8686:8686"
