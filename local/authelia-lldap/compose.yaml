@@ -70,18 +70,16 @@ services:
       timeout: 10s
 
   lldap:
-    image: lldap/lldap:stable
+    image: stable-alpine-rootless
     depends_on:
       locket:
         condition: service_healthy
     container_name: lldap
     # change config location default
     command: ["run", "--config-file", "/config/lldap_config.toml"]
-    ports:
-      - "3890:3890"
-      - "17170:17170"
     expose:
       - 3890
+      - 17170
     restart: unless-stopped
     volumes:
       - type: volume
@@ -98,12 +96,18 @@ services:
       GID: 1000
       TZ: America/Chicago
     healthcheck:
-      test: ["CMD", "/app/lldap", "healthcheck", "--config-file", "/config/lldap_config.toml"]
+      test:
+        [
+          "CMD",
+          "/app/lldap",
+          "healthcheck",
+          "--config-file",
+          "/config/lldap_config.toml",
+        ]
       interval: 10s
       retries: 5
       start_period: 30s
       timeout: 10s
-
 
   authelia:
     image: authelia/authelia:latest
@@ -117,8 +121,8 @@ services:
       lldap:
         condition: service_healthy
     container_name: authelia
-    ports:
-      - 9091:9091
+    expose:
+      - 9091
     restart: unless-stopped
     volumes:
       - type: volume
@@ -132,6 +136,9 @@ services:
       PGID: 1000
       TZ: America/Chicago
       X_AUTHELIA_CONFIG_FILTERS: template
+    networks:
+      - default
+      - proxy
 
   redis:
     image: redis:alpine
@@ -150,6 +157,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+networks:
+  default: {}
+  proxy:
+    external: true
 
 secrets:
   op_token:
