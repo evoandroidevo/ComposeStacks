@@ -55,8 +55,7 @@ services:
       timeout: 10s # Time to wait for a response
       retries: 3 # Number of retries before marking as unhealthy
       start_period: 10s # Delay before health checks begin # Enable automatic updates with Watchtower
-
-services:
+      
   caddy:
     build:
       context: .
