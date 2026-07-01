@@ -74,7 +74,7 @@ services:
             --with github.com/hslatman/caddy-crowdsec-bouncer/appsec@main \
             --with github.com/hslatman/caddy-crowdsec-bouncer/layer4@main \
             --with github.com/WeidiDeng/caddy-cloudflare-ip
-            --with github.com/fvbommel/caddy-dns-ip-range
+            #--with github.com/fvbommel/caddy-dns-ip-range
         # Stage 2: Create the final lightweight image
         FROM caddy:2
         # Copy the custom compiled binary from the builder stage
