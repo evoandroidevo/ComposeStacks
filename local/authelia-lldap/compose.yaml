@@ -79,7 +79,6 @@ services:
     command: ["run", "--config-file", "/config/lldap_config.toml"]
     expose:
       - 3890
-    ports:
       - 17170
     restart: unless-stopped
     volumes:
@@ -96,6 +95,9 @@ services:
       UID: 1000
       GID: 1000
       TZ: America/Chicago
+    networks:
+      - default
+      - proxy
     healthcheck:
       test:
         [

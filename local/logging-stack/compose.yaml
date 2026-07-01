@@ -5,8 +5,8 @@ services:
     depends_on:
       - "victoriametrics"
       - "victorialogs"
-    ports:
-      - 3001:3000
+    expose:
+      - 3000
     volumes:
       - grafanadata:/var/lib/grafana
       - ./config/grafana/provisioning/datasources/single.yml:/etc/grafana/provisioning/datasources/single.yml
@@ -16,31 +16,16 @@ services:
     environment:
       - "GF_INSTALL_PLUGINS=victoriametrics-logs-datasource"
     restart: always
-
-  # vector is logs collector. It collects logs according to vector.yml
-  # and forwards them to VictoriaLogs
-  vector:
-    image: docker.io/timberio/vector:0.56.X-distroless-libc
-    volumes:
-      - type: bind
-        source: /var/run/docker.sock
-        target: /var/run/docker.sock
-      - type: bind
-        source: /var/lib/docker
-        target: /var/lib/docker
-      - ./config/vector/vector-vl-single.yml:/etc/vector/vector.yaml:ro
-    depends_on: [victorialogs]
-    ports:
-      - "8686:8686"
-    user: root
-    restart: always
+    networks:
+      - default
+      - proxy
 
   #  VictoriaLogs instance, a single process responsible for
   #  storing logs and serving read queries.
   victorialogs:
     image: victoriametrics/victoria-logs:v1.51.0
-    ports:
-      - "9428:9428"
+    expose:
+      - 9428
     command:
       - "--storageDataPath=/vlogs"
     volumes:
@@ -54,8 +39,8 @@ services:
   # scraping, storing metrics and serve read requests.
   victoriametrics:
     image: victoriametrics/victoria-metrics:v1.146.0
-    ports:
-      - "8428:8428"
+    expose:
+      - 8428
     volumes:
       - vmdata:/storage
       - ./config/victoriametrics/prometheus-vl-single.yml:/etc/prometheus/prometheus.yml
@@ -77,9 +62,12 @@ services:
       - ./config/vmauth/auth-vl-single.yml:/etc/auth.yml
     command:
       - "--auth.config=/etc/auth.yml"
-    ports:
-      - 8427:8427
+    expose:
+      - 8427
     restart: always
+    networks:
+      - default
+      - proxy
 
   # vmalert executes alerting and recording rules according to the given rule type.
   vmalert:
@@ -88,8 +76,8 @@ services:
       - "vmauth"
       - "alertmanager"
       - "victoriametrics"
-    ports:
-      - 8880:8880
+    expose:
+      - 8880
     volumes:
       - ./config/vmalert/rules/alerts-vlogs.yml:/etc/alerts/vlogs.yml
       - ./config/vmalert/rules/alerts-health.yml:/etc/alerts/alerts-health.yml
@@ -118,13 +106,15 @@ services:
       - ./config/alertmanager/alertmanager.yml:/config/alertmanager.yml
     command:
       - "--config.file=/config/alertmanager.yml"
-    ports:
-      - 9093:9093
+    expose:
+      - 9093
     restart: always
 
 networks:
   default: {}
   logging-network:
+    external: true
+  proxy:
     external: true
 
 volumes:
