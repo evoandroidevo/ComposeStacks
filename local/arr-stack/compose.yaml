@@ -53,10 +53,13 @@ services:
       - TZ=America/Chicago
     volumes:
       - sonarr-arrstack:/config
-      - /mnt/media:/media
+      - nas-media:/media
     expose:
       - 8989
     restart: unless-stopped
+    networks:
+      - default
+      - proxy
 
   radarr:
     image: ghcr.io/linuxserver/radarr:latest
@@ -67,10 +70,13 @@ services:
       - TZ=America/Chicago
     volumes:
       - radarr-arrstack:/config
-      - /mnt/media:/media
+      - nas-media:/media
     expose:
       - 7878
     restart: unless-stopped
+    networks:
+      - default
+      - proxy
 
   qbittorrent:
     image: ghcr.io/linuxserver/qbittorrent:latest
@@ -82,7 +88,11 @@ services:
       - WEBUI_PORT=8080
     volumes:
       - qbittorrent-arrstack:/config
-      - /mnt/media/downloads:/downloads
+      - type: volume
+        source: nas-media
+        target: /downloads
+        volume:
+          subpath: Torrents
     expose:
       - 8080
     ports:
@@ -90,6 +100,9 @@ services:
       - '6881:6881/udp'
     stop_grace_period: 10s"
     restart: unless-stopped
+    networks:
+      - default
+      - proxy
 
   qui:
     image: ghcr.io/autobrr/qui:latest
@@ -122,6 +135,9 @@ services:
       - QUI__LOG_LEVEL=info
       - QUI__LOG_MAX_SIZE=10
       - QUI__LOG_MAX_FILES=5
+    networks:
+      - default
+      - proxy
 
   autobrr:
     image: autobrr/autobrr:latest
@@ -135,6 +151,9 @@ services:
     expose:
       - 7474
     restart: unless-stopped
+    networks:
+      - default
+      - proxy
 
   prowlarr:
     image: ghcr.io/linuxserver/prowlarr:latest
@@ -148,6 +167,9 @@ services:
     expose:
       - 9696
     restart: unless-stopped
+    networks:
+      - default
+      - proxy
 
   profilarr:
     image: ghcr.io/dictionarry-hub/profilarr:latest
@@ -164,6 +186,9 @@ services:
     expose:
       - 6869
     restart: unless-stopped
+    networks:
+      - default
+      - proxy
 
   flaresolver:
     image: ghcr.io/flaresolverr/flaresolverr:latest
@@ -193,6 +218,9 @@ services:
       interval: 15s
       retries: 3
     restart: unless-stopped
+    networks:
+      - default
+      - proxy
 
   scraparr:
     image: ghcr.io/thecfu/scraparr:latest
@@ -222,6 +250,9 @@ services:
     ports:
       - '7100:7100'
     restart: unless-stopped
+    networks:
+      - default
+      - proxy
 
   tracearr:
     image: ghcr.io/connorgallopo/tracearr:latest
@@ -261,6 +292,9 @@ services:
         target: /init.sh
         read_only: true
     restart: unless-stopped
+    networks:
+      - default
+      - proxy
 
   tracearrdb-arrstack:
     image: timescale/timescaledb-ha:pg18.1-ts2.25.0
@@ -326,8 +360,17 @@ services:
     expose:
       - 5690
     restart: unless-stopped
+    networks:
+      - default
+      - proxy
+    
+networks:
+  proxy:
+    external: true
 
 volumes:
+  nas-media:
+    external: true
   sonarr-arrstack:
     driver: local
   radarr-arrstack:
