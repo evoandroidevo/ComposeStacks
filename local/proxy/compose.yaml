@@ -86,10 +86,11 @@ services:
         condition: service_healthy
     cap_add:
       - NET_ADMIN
-    expose:
-      - 80
-      - 443
-      - 443/udp
+    ports:
+      - 80:80
+      - 443:443
+      - 443:443/udp
+      - 3890:3890
     volumes:
       - type: volume
         source: secrets-store-proxy
