@@ -78,7 +78,7 @@ ldap_user_email = "{{ "op://DockerSecrets/authelia-lldap/lldap-ldap_user_email" 
 ## in the LLDAP_LDAP_USER_PASS_FILE environment variable
 ## Note: you can create another admin user for user administration, this
 ## is just the default one.
-ldap_user_pass = "{{ "op://DockerSecrets/authelia-lldap/authentication_backend-ldap-password" }}"
+ldap_user_pass = "{{ "op://DockerSecrets/authelia-lldap/lldap-ldap_user_pass" }}"
 
 ## Force reset of the admin password.
 ## Break glass in case of emergency: if you lost the admin password, you
