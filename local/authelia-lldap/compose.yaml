@@ -96,7 +96,7 @@ services:
       UID: 1000
       GID: 1000
       TZ: America/Chicago
-      LLDAP_FORCE_LDAP_USER_PASS_RESET: true
+      #LLDAP_FORCE_LDAP_USER_PASS_RESET: true
     networks:
       - default
       - proxy
