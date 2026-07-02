@@ -61,7 +61,7 @@ services:
           subpath: postgres
       - type: volume
         source: authdb-git
-        target: /var/lib/postgresql/data
+        target: /var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready", "-U", "$${POSTGRES_USER}"]
       interval: 10s
@@ -95,6 +95,8 @@ services:
       UID: 1000
       GID: 1000
       TZ: America/Chicago
+      LLDAP_FORCE_UPDATE_PRIVATE_KEY: true
+      LLDAP_FORCE_LDAP_USER_PASS_RESET: true
     networks:
       - default
       - proxy
