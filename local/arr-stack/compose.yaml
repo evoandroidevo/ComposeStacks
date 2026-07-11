@@ -22,19 +22,19 @@ services:
   locket:
     image: ghcr.io/bpbradley/locket:latest
     container_name: locket-arrstack
-    user: '65532:65532'
+    user: "65532:65532"
     cap_drop:
       - ALL
     security_opt:
       - no-new-privileges:true
     command:
-      - '--provider=op'
-      - '--mode=exit'
-      - '--inject-failure-policy=error'
-      - '--op-token=file:/run/secrets/op_token'
-      - '--map=/scraparr:/run/secrets/locket/scraparr'
-      - '--map=/qui:/run/secrets/locket/qui'
-      - '--map=/tracearrdb:/run/secrets/locket/tracearrdb'
+      - "--provider=op"
+      - "--mode=exit"
+      - "--inject-failure-policy=error"
+      - "--op-token=file:/run/secrets/op_token"
+      - "--map=/scraparr:/run/secrets/locket/scraparr"
+      - "--map=/qui:/run/secrets/locket/qui"
+      - "--map=/tracearrdb:/run/secrets/locket/tracearrdb"
     volumes:
       - ./config/scraparr:/scraparr:ro
       - ./config/qui:/qui:ro
@@ -96,8 +96,8 @@ services:
     expose:
       - 8080
     ports:
-      - '6881:6881'
-      - '6881:6881/udp'
+      - "6881:6881"
+      - "6881:6881/udp"
     stop_grace_period: 10s"
     restart: unless-stopped
     networks:
@@ -142,10 +142,11 @@ services:
   autobrr:
     image: autobrr/autobrr:latest
     container_name: autobrr
+    user: "1000:1000"
     environment:
-      - PUID=1000
-      - PGID=1000
       - TZ=America/Chicago
+      - AUTOBRR__BASE_URL="/autobrr/"
+      - AUTOBRR__HOST=0.0.0.0
     volumes:
       - autobrr-arrstack:/config
     expose:
@@ -248,7 +249,7 @@ services:
         volume:
           subpath: scraparr/config.yaml
     ports:
-      - '7100:7100'
+      - "7100:7100"
     restart: unless-stopped
     networks:
       - default
@@ -267,8 +268,8 @@ services:
     # Override the default entrypoint to run our init script first, which will populate the environment variables from the secrets without
     # writing them to disk, then exec the original entrypoint
     # https://github.com/connorgallopo/Tracearr/blob/main/docker/Dockerfile
-    entrypoint: ['/init.sh -f /config/.env']
-    command: ['node', 'apps/server/dist/index.js']
+    entrypoint: ["/init.sh -f /config/.env"]
+    command: ["node", "apps/server/dist/index.js"]
     environment:
       - NODE_ENV=production
       - PORT=3000
@@ -310,7 +311,7 @@ services:
     # Override the default entrypoint to run our init script first, which will populate the environment variables from the secrets without
     # writing them to disk, then exec the original entrypoint
     # doesnt seem to be a dockerfile so i hope this works right https://github.com/timescale/timescaledb
-    entrypoint: ['init.sh -f /config/.env']
+    entrypoint: ["init.sh -f /config/.env"]
     command: postgres -c timescaledb.license=timescale -c timescaledb.max_tuples_decompressed_per_dml_transaction=0 -c max_locks_per_transaction=4096 -c timescaledb.telemetry_level=off
     environment:
       - TZ=America/Chicago
@@ -328,7 +329,7 @@ services:
         target: /init.sh
         read_only: true
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER}']
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -341,7 +342,7 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -363,7 +364,7 @@ services:
     networks:
       - default
       - proxy
-    
+
 networks:
   proxy:
     external: true
