@@ -1,4 +1,34 @@
 services:
+  locket:
+    image: ghcr.io/bpbradley/locket:op
+    user: "65532:0"
+    container_name: locket-proxy
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    command:
+      - "--provider=op"
+      # one-shot removes the secrets before they can be imported switching to park.
+      - "--mode=park"
+      - "--inject-failure-policy=error"
+      - "--log-level=info"
+      - "--user=65532:0"
+      # -r--r--r-- file mode
+      - "--file-mode=0444"
+      - "--dir-mode=0755"
+      - "--op-token=file:/run/secrets/op_token"
+      - "--secret=grafana-domain={{ op://DockerSecrets/logging-stack/grafana-domain }}
+      - "--map=/vmauth:/run/secrets/locket/vmauth"
+      - "--map=/crowdsec:/run/secrets/locket/crowdsec"
+    secrets:
+      - op_token
+    volumes:
+      # Mount in your actual secret templates, with secret references
+      - ./config/vmauth:/vmauth:ro
+      # Mount in your output directory, where you want secrets materialized
+      - secrets-store-logs:/run/secrets/locket
+
   # Grafana instance configured with VictoriaLogs as datasource
   grafana:
     image: grafana/grafana:12.4.5
@@ -8,6 +38,12 @@ services:
     expose:
       - 3000
     volumes:
+      - type: volume
+        source: secrets-store-logs
+        target: /run/secrets/grafana-domain
+        read_only: true
+        volume:
+          subpath: grafana-domain
       - grafanadata:/var/lib/grafana
       - ./config/grafana/provisioning/datasources/single.yml:/etc/grafana/provisioning/datasources/single.yml
       - ./config/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
@@ -15,6 +51,9 @@ services:
       - ./config/grafana/dashboards/victorialogs-internal.json:/var/lib/grafana/dashboards/victorialogs-internal.json
     environment:
       - "GF_INSTALL_PLUGINS=victoriametrics-logs-datasource"
+      - "GF_SERVER_DOMAIN_FILE=/run/secrets/grafana-domain"
+      - "GF_SERVER_ROOT_URL=https://$__file{/etc/secrets/grafana-domain}/grafana"
+      - "GF_SERVER_SERVE_FROM_SUB_PATH=true"
     restart: always
     networks:
       - default
@@ -59,9 +98,14 @@ services:
       - "victoriametrics"
       - "victorialogs"
     volumes:
-      - ./config/vmauth/auth-vl-single.yml:/etc/auth.yml
+      - type: volume
+        source: secrets-store-logs
+        target: /config
+        read_only: true
+        volume:
+          subpath: vmauth
     command:
-      - "--auth.config=/etc/auth.yml"
+      - "--auth.config=/config/config.yml"
     expose:
       - 8427
     restart: always
