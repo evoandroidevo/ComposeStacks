@@ -1,0 +1,17 @@
+<Config>
+  <LogLevel>info</LogLevel>
+  <UpdateMechanism>BuiltIn</UpdateMechanism>
+  <BindAddress>0.0.0.0</BindAddress>
+  <Port>8989</Port>
+  <SslPort>9898</SslPort>
+  <EnableSsl>False</EnableSsl>
+  <LaunchBrowser>False</LaunchBrowser>
+  <ApiKey>{{ op://DockerSecrets/arr-stack/sonarr-apikey }}</ApiKey>
+  <AuthenticationMethod>Forms</AuthenticationMethod>
+  <UrlBase>sonarr</UrlBase>
+  <Branch>main</Branch>
+  <AuthenticationRequired>DisabledForLocalAddresses</AuthenticationRequired>
+  <InstanceName>Sonarr</InstanceName>
+  <SslCertPath></SslCertPath>
+  <SslCertPassword></SslCertPassword>
+</Config>
