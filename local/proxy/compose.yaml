@@ -69,7 +69,7 @@ services:
         # bouncer 2 https://app.crowdsec.net/hub/author/hslatman/remediation-components/caddy-crowdsec-bouncer
         RUN xcaddy build \
             --with github.com/caddy-dns/cloudflare \
-            --with github.com/evoandroidevo/caddy-trapdoor@v0.0.1 \
+            --with github.com/evoandroidevo/caddy-trapdoor@v0.0.2 \
             --with github.com/mholt/caddy-l4 \
             --with github.com/caddyserver/transform-encoder \
             --with github.com/hslatman/caddy-crowdsec-bouncer/http@main \
