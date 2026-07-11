@@ -26,7 +26,7 @@ services:
     volumes:
       # Mount in your actual secret templates, with secret references
       - ./config/caddy:/caddy:ro
-      - ./config/crowdsec/secrets:crowdsec:ro
+      #- ./config/crowdsec/secrets:crowdsec:ro
       # Mount in your output directory, where you want secrets materialized
       - secrets-store-proxy:/run/secrets/locket
 
