@@ -20,7 +20,7 @@ services:
       - "--op-token=file:/run/secrets/op_token"
       - "--secret=tunnel_token={{ op://DockerSecrets/Proxy-config/cf-token }}"
       - "--map=/caddy:/run/secrets/locket/caddy"
-      - "--map=/crowdsec:/run/secrets/locket/crowdsec"
+      #- "--map=/crowdsec:/run/secrets/locket/crowdsec"
     secrets:
       - op_token
     volumes:
