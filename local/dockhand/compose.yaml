@@ -32,6 +32,8 @@ services:
     image: tecnativa/docker-socket-proxy
     container_name: socket-proxy
     restart: unless-stopped
+    logging:
+      driver: "none"
     environment:
       # Required for Dockhand core functionality
       - CONTAINERS=1
