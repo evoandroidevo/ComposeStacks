@@ -15,8 +15,8 @@ services:
       - "--log-level=info"
       - "--user=65532:0"
       # -r--r--r-- file mode
-      - "--file-mode=0664"
-      - "--dir-mode=0777"
+      - "--file-mode=0444"
+      - "--dir-mode=0755"
       - "--op-token=file:/run/secrets/op_token"
       - "--secret=tunnel_token={{ op://DockerSecrets/Proxy-config/cf-token }}"
       - "--map=/caddy:/run/secrets/locket/caddy"
@@ -69,14 +69,15 @@ services:
         # bouncer 2 https://app.crowdsec.net/hub/author/hslatman/remediation-components/caddy-crowdsec-bouncer
         RUN xcaddy build \
             --with github.com/caddy-dns/cloudflare \
-            --with github.com/kassner/caddy-trapdoor \
+            --with github.com/evoandroidevo/caddy-trapdoor \
             --with github.com/mholt/caddy-l4 \
             --with github.com/caddyserver/transform-encoder \
             --with github.com/hslatman/caddy-crowdsec-bouncer/http@main \
             --with github.com/hslatman/caddy-crowdsec-bouncer/appsec@main \
             --with github.com/hslatman/caddy-crowdsec-bouncer/layer4@main \
-            --with github.com/WeidiDeng/caddy-cloudflare-ip
-            #--with github.com/fvbommel/caddy-dns-ip-range
+            --with github.com/WeidiDeng/caddy-cloudflare-ip \
+            --with github.com/fvbommel/caddy-dns-ip-range \
+            --with github.com/fvbommel/caddy-combine-ip-ranges
         # Stage 2: Create the final lightweight image
         FROM caddy:2
         # Copy the custom compiled binary from the builder stage
@@ -86,6 +87,8 @@ services:
     depends_on:
       locket:
         condition: service_healthy
+      cloudflare-tunnel:
+        condition: service_started
     cap_add:
       - NET_ADMIN
     ports:
@@ -106,33 +109,33 @@ services:
       - proxy
 
   #https://docs.crowdsec.net/u/getting_started/installation/docker
-  crowdsec:
-    image: crowdsecurity/crowdsec
-    container_name: crowdsec-proxy
-    enterypoint: ["/init.sh", "-f", "/config/.env"]
-    command: ["/bin/bash", "/docker_start.sh"]
-    restart: always
-    expose:
-      - 8080
-    environment:
-      COLLECTIONS:
-      GID: 1000
-      UID: 1000
-      TZ: America/Chicago
-    volumes:
-      - ./config/crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml
-      - crowdsec-db:/var/lib/crowdsec/data/
-      - crowdsec-config:/etc/crowdsec/
-      - ../../common/scripts/init.sh:/init.sh:ro
-      - type: volume
-        source: secrets-store-proxy
-        target: /config
-        read_only: true
-        volume:
-          subpath: crowdsec
-    networks:
-      - default
-      - logging-network
+  # crowdsec:
+  #   image: crowdsecurity/crowdsec
+  #   container_name: crowdsec-proxy
+  #   enterypoint: ["/init.sh", "-f", "/config/.env"]
+  #   command: ["/bin/bash", "/docker_start.sh"]
+  #   restart: always
+  #   expose:
+  #     - 8080
+  #   environment:
+  #     COLLECTIONS:
+  #     GID: 1000
+  #     UID: 1000
+  #     TZ: America/Chicago
+  #   volumes:
+  #     - ./config/crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml
+  #     - crowdsec-db:/var/lib/crowdsec/data/
+  #     - crowdsec-config:/etc/crowdsec/
+  #     - ../../common/scripts/init.sh:/init.sh:ro
+  #     - type: volume
+  #       source: secrets-store-proxy
+  #       target: /config
+  #       read_only: true
+  #       volume:
+  #         subpath: crowdsec
+  #   networks:
+  #     - default
+  #     - logging-network
 
 #  bouncer1:
 #https://app.crowdsec.net/hub/author/Teifun2/remediation-components/cs-unifi-bouncer
@@ -159,10 +162,10 @@ volumes:
     driver: local
   caddy_config:
     driver: local
-  crowdsec-db:
-    driver: local
-  crowdsec-config:
-    driver: local
+  # crowdsec-db:
+  #   driver: local
+  # crowdsec-config:
+  #   driver: local
   secrets-store-proxy:
     driver: local
     driver_opts:
