@@ -67,6 +67,8 @@ services:
         # Stage 1: Build Caddy with custom modules using xcaddy
         FROM caddy:2-builder AS builder
         # bouncer 2 https://app.crowdsec.net/hub/author/hslatman/remediation-components/caddy-crowdsec-bouncer
+        ENV GOPROXY=direct
+        ENV GOSUMDB=off
         RUN xcaddy build \
             --with github.com/caddy-dns/cloudflare \
             --with github.com/evoandroidevo/caddy-trapdoor \
