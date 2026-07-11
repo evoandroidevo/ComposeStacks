@@ -87,8 +87,6 @@ services:
     depends_on:
       locket:
         condition: service_healthy
-      cloudflare-tunnel:
-        condition: service_started
     cap_add:
       - NET_ADMIN
     ports:
