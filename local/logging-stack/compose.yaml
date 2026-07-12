@@ -64,6 +64,7 @@ services:
       - "GF_SERVER_DOMAIN__FILE=/run/secrets/grafana_domain"
       - "GF_SERVER_ROOT_URL__FILE=/run/secrets/grafana_domain_base"
       - "GF_SERVER_SERVE_FROM_SUB_PATH=true"
+      - "GF_DISABLE_LOGIN_FORM=true"
     restart: always
     networks:
       - default
