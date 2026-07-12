@@ -18,7 +18,7 @@ services:
       - "--file-mode=0444"
       - "--dir-mode=0755"
       - "--op-token=file:/run/secrets/op_token"
-      - "--secret=grafana-domain={{ op://DockerSecrets/logging-stack/grafana-domain }}
+      - "--secret=grafana_domain={{ op://DockerSecrets/logging-stack/grafana_domain }}"
       - "--map=/vmauth:/run/secrets/locket/vmauth"
       - "--map=/crowdsec:/run/secrets/locket/crowdsec"
     secrets:
@@ -40,7 +40,7 @@ services:
     volumes:
       - type: volume
         source: secrets-store-logs
-        target: /run/secrets/grafana-domain
+        target: /run/secrets/grafana_domain
         read_only: true
         volume:
           subpath: grafana-domain
@@ -51,8 +51,8 @@ services:
       - ./config/grafana/dashboards/victorialogs-internal.json:/var/lib/grafana/dashboards/victorialogs-internal.json
     environment:
       - "GF_INSTALL_PLUGINS=victoriametrics-logs-datasource"
-      - "GF_SERVER_DOMAIN_FILE=/run/secrets/grafana-domain"
-      - "GF_SERVER_ROOT_URL=https://$__file{/etc/secrets/grafana-domain}/grafana"
+      - "GF_SERVER_DOMAIN_FILE=/run/secrets/grafana_domain"
+      - "GF_SERVER_ROOT_URL=https://$__file{/etc/secrets/grafana_domain}/grafana"
       - "GF_SERVER_SERVE_FROM_SUB_PATH=true"
     restart: always
     networks:
