@@ -165,3 +165,9 @@ volumes:
   vmdata: {}
   vldata: {}
   grafanadata: {}
+  secrets-store-logs:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: uid=65532,gid=1000,mode=744
