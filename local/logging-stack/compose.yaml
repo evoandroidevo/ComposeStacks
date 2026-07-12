@@ -47,7 +47,13 @@ services:
         target: /run/secrets/grafana_domain
         read_only: true
         volume:
-          subpath: grafana-domain
+          subpath: grafana_domain
+      - type: volume
+        source: secrets-store-logs
+        target: /run/secrets/grafana_domain_base
+        read_only: true
+        volume:
+          subpath: grafana_domain_base
       - grafanadata:/var/lib/grafana
       - ./config/grafana/provisioning/datasources/single.yml:/etc/grafana/provisioning/datasources/single.yml
       - ./config/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
