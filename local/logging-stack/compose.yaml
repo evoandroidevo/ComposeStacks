@@ -161,6 +161,10 @@ networks:
   proxy:
     external: true
 
+secrets:
+  op_token:
+    file: /etc/op/token
+
 volumes:
   vmdata: {}
   vldata: {}
