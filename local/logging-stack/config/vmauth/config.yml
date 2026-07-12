@@ -8,3 +8,8 @@ unauthorized_user:
     - "/select/.*"
     url_prefix:
     - http://victorialogs:9428
+
+  - src_paths:
+    - "/grafana/.*"
+    url_prefix:
+    - http://grafana:3000
