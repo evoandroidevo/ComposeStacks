@@ -2,7 +2,7 @@ services:
   locket:
     image: ghcr.io/bpbradley/locket:op
     user: "65532:0"
-    container_name: locket-proxy
+    container_name: locket-logs
     security_opt:
       - no-new-privileges:true
     cap_drop:
