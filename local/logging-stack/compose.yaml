@@ -18,7 +18,8 @@ services:
       - "--file-mode=0444"
       - "--dir-mode=0755"
       - "--op-token=file:/run/secrets/op_token"
-      - "--secret=grafana_domain={{ op://DockerSecrets/logging-stack/grafana_domain }}"
+      - "--secret=grafana_domain={{ op://DockerSecrets/logging-stack/grafana-domain }}"
+      - "--secret=grafana_domain_base={{ op://DockerSecrets/logging-stack/grafana-domain-base }}"
       - "--map=/vmauth:/run/secrets/locket/vmauth"
       - "--map=/crowdsec:/run/secrets/locket/crowdsec"
     secrets:
@@ -31,7 +32,7 @@ services:
 
   # Grafana instance configured with VictoriaLogs as datasource
   grafana:
-    image: grafana/grafana:12.4.5"
+    image: grafana/grafana:12.4.5
     depends_on:
       locket:
         condition: service_healthy
@@ -55,8 +56,8 @@ services:
       - ./config/grafana/dashboards/victorialogs-internal.json:/var/lib/grafana/dashboards/victorialogs-internal.json
     environment:
       - "GF_INSTALL_PLUGINS=victoriametrics-logs-datasource"
-      - "GF_SERVER_DOMAIN_FILE=/run/secrets/grafana_domain"
-      - "GF_SERVER_ROOT_URL=https://$__file{/etc/secrets/grafana_domain}/grafana"
+      - "GF_SERVER_DOMAIN__FILE=/run/secrets/grafana_domain"
+      - "GF_SERVER_ROOT_URL__FILE=/run/secrets/grafana_domain_base"
       - "GF_SERVER_SERVE_FROM_SUB_PATH=true"
     restart: always
     networks:
