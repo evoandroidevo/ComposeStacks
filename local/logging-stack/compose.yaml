@@ -21,7 +21,6 @@ services:
       - "--secret=grafana_domain={{ op://DockerSecrets/logging-stack/grafana-domain }}"
       - "--secret=grafana_domain_base={{ op://DockerSecrets/logging-stack/grafana-domain-base }}"
       - "--map=/vmauth:/run/secrets/locket/vmauth"
-      - "--map=/crowdsec:/run/secrets/locket/crowdsec"
     secrets:
       - op_token
     volumes:
