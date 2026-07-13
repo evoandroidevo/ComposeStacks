@@ -16,12 +16,20 @@ transforms:
       # Insert this before you build ._stream
       # prefer .file or .path if the file source sets it; fall back to existing .filename or default
       if .file != null {
-        m = parse_regex(.file, r'(?P<name>[^/\\]+)$')
-        if m != null { .filename = m.name } else { .filename = .file }
-      } elif .path != null {
-        m = parse_regex(.path, r'(?P<name>[^/\\]+)$')
-        if m != null { .filename = m.name } else { .filename = .path }
-      } elif .filename == null {
+        m, err = parse_regex(.file, r'(?P<name>[^/\\]+)$')
+        if err == null {
+          if m != null { .filename = m.name } else { .filename = .file }
+        } else {
+          .filename = .file
+        }
+      } else if .path != null {
+        m, err = parse_regex(.path, r'(?P<name>[^/\\]+)$')
+        if err == null {
+          if m != null { .filename = m.name } else { .filename = .path }
+        } else {
+          .filename = .path
+        }
+      } else if .filename == null {
         .filename = "jellyfin.log"
       }
 
@@ -35,20 +43,27 @@ transforms:
       }
 
       # 2. Extract timestamp, level, and message using Regex
-      m = parse_regex(raw_msg, r'^\[(?P<timestamp>[^\]]+)\]\s+\[(?P<level>[A-Z]+)\]\s+(?P<message>.*)$')
+      m, err = parse_regex(raw_msg, r'^\[(?P<timestamp>[^\]]+)\]\s+\[(?P<level>[A-Z]+)\]\s+(?P<message>.*)$')
 
-      if m != null {
+      if err == null && m != null {
         # Build ISO8601-like timestamp from Jellyfin's format
-        parts = split(m.timestamp, " ")
-        if parts[2] != null {
-          .timestamp = parts[0] + "T" + parts[1] + parts[2]
+        parts, perr = split(m.timestamp, " ")
+        if perr == null && parts[2] != null {
+          .timestamp, serr = parts[0] + "T" + parts[1] + parts[2]
+          if serr != null {
+            .timestamp = m.timestamp
+          }
         } else {
           .timestamp = m.timestamp
         }
 
         # Normalize level names
         lvl = m.level
-        if lvl == "INF" { .level = "INFO" } elif lvl == "WRN" { .level = "WARN" } elif lvl == "ERR" { .level = "ERROR" } elif lvl == "DBG" { .level = "DEBUG" } else { .level =lvl }
+        if lvl == "INF" { .level = "INFO" }
+        else if lvl == "WRN" { .level = "WARN" }
+        else if lvl == "ERR" { .level = "ERROR" }
+        else if lvl == "DBG" { .level = "DEBUG" }
+        else { .level = lvl }
 
         # Use the required field name for victorialogs
         ._msg = m.message
