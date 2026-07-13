@@ -10,7 +10,6 @@ This repository contains a set of Docker Compose stacks for local self-hosted se
 - [local/proxy](local/proxy): Caddy reverse proxy with a Cloudflare Tunnel
 - [local/arr-stack](local/arr-stack): media automation stack configuration
 - [local/irc-client](local/irc-client): IRC client stack
-- [local/scripts](local/scripts): helper scripts for setup and bootstrap tasks
 
 ## Getting started
 
