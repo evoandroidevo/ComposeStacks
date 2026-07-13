@@ -14,193 +14,193 @@
 # Wizarr: 5690
 # Profilarr: 6869
 
-secrets:
-  op_token:
-    file: /etc/op/token
-
+# secrets:
+#   op_token:
+#     file: /etc/op/token
 services:
-  locket:
-    image: ghcr.io/bpbradley/locket:latest
-    container_name: locket-arrstack
-    user: "65532:65532"
-    cap_drop:
-      - ALL
-    security_opt:
-      - no-new-privileges:true
-    command:
-      - "--provider=op"
-      - "--mode=exit"
-      - "--inject-failure-policy=error"
-      - "--op-token=file:/run/secrets/op_token"
-      - "--map=/scraparr:/run/secrets/locket/scraparr"
-      - "--map=/qui:/run/secrets/locket/qui"
-      - "--map=/tracearrdb:/run/secrets/locket/tracearrdb"
-    volumes:
-      - ./config/scraparr:/scraparr:ro
-      - ./config/qui:/qui:ro
-      - ./config/tracearrdb:/tracearrdb:ro
-      - secrets-store-arrstack:/run/secrets/locketarr
-    secrets:
-      - op_token
-    restart: unless-stopped
 
-  sonarr:
-    image: ghcr.io/linuxserver/sonarr:latest
-    container_name: sonarr
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/Chicago
-    volumes:
-      - sonarr-arrstack:/config
-      - nas-media:/media
-    expose:
-      - 8989
-    restart: unless-stopped
-    networks:
-      - default
-      - proxy
+#   locket:
+#     image: ghcr.io/bpbradley/locket:latest
+#     container_name: locket-arrstack
+#     user: "65532:65532"
+#     cap_drop:
+#       - ALL
+#     security_opt:
+#       - no-new-privileges:true
+#     command:
+#       - "--provider=op"
+#       - "--mode=exit"
+#       - "--inject-failure-policy=error"
+#       - "--op-token=file:/run/secrets/op_token"
+#       - "--map=/scraparr:/run/secrets/locket/scraparr"
+#       - "--map=/qui:/run/secrets/locket/qui"
+#       - "--map=/tracearrdb:/run/secrets/locket/tracearrdb"
+#     volumes:
+#       - ./config/scraparr:/scraparr:ro
+#       - ./config/qui:/qui:ro
+#       - ./config/tracearrdb:/tracearrdb:ro
+#       - secrets-store-arrstack:/run/secrets/locketarr
+#     secrets:
+#       - op_token
+#     restart: unless-stopped
 
-  radarr:
-    image: ghcr.io/linuxserver/radarr:latest
-    container_name: radarr
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/Chicago
-    volumes:
-      - radarr-arrstack:/config
-      - nas-media:/media
-    expose:
-      - 7878
-    restart: unless-stopped
-    networks:
-      - default
-      - proxy
+  # sonarr:
+  #   image: ghcr.io/linuxserver/sonarr:latest
+  #   container_name: sonarr
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=America/Chicago
+  #   volumes:
+  #     - sonarr-arrstack:/config
+  #     - nas-media:/media
+  #   expose:
+  #     - 8989
+  #   restart: unless-stopped
+  #   networks:
+  #     - default
+  #     - proxy
 
-  qbittorrent:
-    image: ghcr.io/linuxserver/qbittorrent:latest
-    container_name: qbittorrent
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/Chicago
-      - WEBUI_PORT=8080
-    volumes:
-      - qbittorrent-arrstack:/config
-      - type: volume
-        source: nas-media
-        target: /downloads
-        volume:
-          subpath: Torrents
-    expose:
-      - 8080
-    ports:
-      - "6881:6881"
-      - "6881:6881/udp"
-    stop_grace_period: 10s"
-    restart: unless-stopped
-    networks:
-      - default
-      - proxy
+  # radarr:
+  #   image: ghcr.io/linuxserver/radarr:latest
+  #   container_name: radarr
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=America/Chicago
+  #   volumes:
+  #     - radarr-arrstack:/config
+  #     - nas-media:/media
+  #   expose:
+  #     - 7878
+  #   restart: unless-stopped
+  #   networks:
+  #     - default
+  #     - proxy
 
-  qui:
-    image: ghcr.io/autobrr/qui:latest
-    depends_on:
-      qbittorrent:
-        condition: service_healthy
-      locket:
-        condition: service_completed_successfully
-    container_name: qui
-    restart: unless-stopped
-    expose:
-      - 7476
-    volumes:
-      - type: volume
-        source: qui-arrstack
-        target: /data
-      - type: volume
-        source: locket-arrstack
-        target: /config
-        volume:
-          subpath: qui
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/Chicago
-      - QUI__HOST=0.0.0.0
-      - QUI__PORT=7476
-      - QUI__DATA_DIR=/data
-      - QUI__LOG_DIR=/data/logs
-      - QUI__LOG_LEVEL=info
-      - QUI__LOG_MAX_SIZE=10
-      - QUI__LOG_MAX_FILES=5
-    networks:
-      - default
-      - proxy
+  # qbittorrent:
+  #   image: ghcr.io/linuxserver/qbittorrent:latest
+  #   container_name: qbittorrent
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=America/Chicago
+  #     - WEBUI_PORT=8080
+  #   volumes:
+  #     - qbittorrent-arrstack:/config
+  #     - type: volume
+  #       source: nas-media
+  #       target: /downloads
+  #       volume:
+  #         subpath: Torrents
+  #   expose:
+  #     - 8080
+  #   ports:
+  #     - "6881:6881"
+  #     - "6881:6881/udp"
+  #   stop_grace_period: 10s"
+  #   restart: unless-stopped
+  #   networks:
+  #     - default
+  #     - proxy
 
-  autobrr:
-    image: autobrr/autobrr:latest
-    container_name: autobrr
-    user: "1000:1000"
-    environment:
-      - TZ=America/Chicago
-      - AUTOBRR__BASE_URL="/autobrr/"
-      - AUTOBRR__HOST=0.0.0.0
-    volumes:
-      - autobrr-arrstack:/config
-    expose:
-      - 7474
-    restart: unless-stopped
-    networks:
-      - default
-      - proxy
+  # qui:
+  #   image: ghcr.io/autobrr/qui:latest
+  #   depends_on:
+  #     qbittorrent:
+  #       condition: service_healthy
+  #     locket:
+  #       condition: service_completed_successfully
+  #   container_name: qui
+  #   restart: unless-stopped
+  #   expose:
+  #     - 7476
+  #   volumes:
+  #     - type: volume
+  #       source: qui-arrstack
+  #       target: /data
+  #     - type: volume
+  #       source: locket-arrstack
+  #       target: /config
+  #       volume:
+  #         subpath: qui
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=America/Chicago
+  #     - QUI__HOST=0.0.0.0
+  #     - QUI__PORT=7476
+  #     - QUI__DATA_DIR=/data
+  #     - QUI__LOG_DIR=/data/logs
+  #     - QUI__LOG_LEVEL=info
+  #     - QUI__LOG_MAX_SIZE=10
+  #     - QUI__LOG_MAX_FILES=5
+  #   networks:
+  #     - default
+  #     - proxy
 
-  prowlarr:
-    image: ghcr.io/linuxserver/prowlarr:latest
-    container_name: prowlarr
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/Chicago
-    volumes:
-      - prowlarr-arrstack:/config
-    expose:
-      - 9696
-    restart: unless-stopped
-    networks:
-      - default
-      - proxy
+  # autobrr:
+  #   image: autobrr/autobrr:latest
+  #   container_name: autobrr
+  #   user: "1000:1000"
+  #   environment:
+  #     - TZ=America/Chicago
+  #     - AUTOBRR__BASE_URL="/autobrr/"
+  #     - AUTOBRR__HOST=0.0.0.0
+  #   volumes:
+  #     - autobrr-arrstack:/config
+  #   expose:
+  #     - 7474
+  #   restart: unless-stopped
+  #   networks:
+  #     - default
+  #     - proxy
 
-  profilarr:
-    image: ghcr.io/dictionarry-hub/profilarr:latest
-    container_name: profilarr
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - PORT=6869
-      - HOST=0.0.0.0
-      - UMASK=0022
-      - TZ=America/Chicago
-    volumes:
-      - profilarr-arrstack:/config
-    expose:
-      - 6869
-    restart: unless-stopped
-    networks:
-      - default
-      - proxy
+  # prowlarr:
+  #   image: ghcr.io/linuxserver/prowlarr:latest
+  #   container_name: prowlarr
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=America/Chicago
+  #   volumes:
+  #     - prowlarr-arrstack:/config
+  #   expose:
+  #     - 9696
+  #   restart: unless-stopped
+  #   networks:
+  #     - default
+  #     - proxy
 
-  flaresolver:
-    image: ghcr.io/flaresolverr/flaresolverr:latest
-    container_name: flaresolver
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/Chicago
-    expose:
-      - 8191
-    restart: unless-stopped
+  # profilarr:
+  #   image: ghcr.io/dictionarry-hub/profilarr:latest
+  #   container_name: profilarr
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - PORT=6869
+  #     - HOST=0.0.0.0
+  #     - UMASK=0022
+  #     - TZ=America/Chicago
+  #   volumes:
+  #     - profilarr-arrstack:/config
+  #   expose:
+  #     - 6869
+  #   restart: unless-stopped
+  #   networks:
+  #     - default
+  #     - proxy
+
+  # flaresolver:
+    # image: ghcr.io/flaresolverr/flaresolverr:latest
+    # container_name: flaresolver
+    # environment:
+    #   - PUID=1000
+    #   - PGID=1000
+    #   - TZ=America/Chicago
+    # expose:
+    #   - 8191
+    # restart: unless-stopped
 
   seerr:
     image: ghcr.io/seerr-team/seerr:latest
@@ -212,6 +212,8 @@ services:
       - port=5055
     expose:
       - 5055
+    volumes:
+      - seerr-data:/app/config
     healthcheck:
       test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/settings/public || exit 1
       start_period: 20s
@@ -223,147 +225,147 @@ services:
       - default
       - proxy
 
-  scraparr:
-    image: ghcr.io/thecfu/scraparr:latest
-    container_name: scraparr
-    depends_on:
-      locket-arrstack:
-        condition: service_completed_successfully
-      sonarr:
-        condition: service_healthy
-      radarr:
-        condition: service_healthy
-      prowlarr:
-        condition: service_healthy
-      seerr:
-        condition: service_healthy
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/Chicago
-    volumes:
-      - type: volume
-        source: locket-arrstack
-        target: /app/src/scraparr/config/config.yaml
-        read_only: true
-        volume:
-          subpath: scraparr/config.yaml
-    ports:
-      - "7100:7100"
-    restart: unless-stopped
-    networks:
-      - default
-      - proxy
+  # scraparr:
+  #   image: ghcr.io/thecfu/scraparr:latest
+  #   container_name: scraparr
+  #   depends_on:
+  #     locket-arrstack:
+  #       condition: service_completed_successfully
+  #     sonarr:
+  #       condition: service_healthy
+  #     radarr:
+  #       condition: service_healthy
+  #     prowlarr:
+  #       condition: service_healthy
+  #     seerr:
+  #       condition: service_healthy
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=America/Chicago
+  #   volumes:
+  #     - type: volume
+  #       source: locket-arrstack
+  #       target: /app/src/scraparr/config/config.yaml
+  #       read_only: true
+  #       volume:
+  #         subpath: scraparr/config.yaml
+  #   ports:
+  #     - "7100:7100"
+  #   restart: unless-stopped
+  #   networks:
+  #     - default
+  #     - proxy
 
-  tracearr:
-    image: ghcr.io/connorgallopo/tracearr:latest
-    container_name: tracearr
-    depends_on:
-      tracearrdb-arrstack:
-        condition: service_healthy
-      tracearr-redis-arrstack:
-        condition: service_healthy
-      locket-arrstack:
-        condition: service_completed_successfully
-    # Override the default entrypoint to run our init script first, which will populate the environment variables from the secrets without
-    # writing them to disk, then exec the original entrypoint
-    # https://github.com/connorgallopo/Tracearr/blob/main/docker/Dockerfile
-    entrypoint: ["/init.sh -f /config/.env"]
-    command: ["node", "apps/server/dist/index.js"]
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - HOST=0.0.0.0
-      - TZ=America/Chicago
-      - REDIS_URL=redis://tracearr-redis-arrstack:6379
-      - LOG_LEVEL=info
-    expose:
-      - 3000
-    volumes:
-      - type: volume
-        source: tracearr-arrstack
-        target: /data
-      - type: volume
-        source: locket-arrstack
-        target: /config
-        volume:
-          subpath: tracearr
-      - type: bind
-        source: ../../common/scripts/init.sh
-        target: /init.sh
-        read_only: true
-    restart: unless-stopped
-    networks:
-      - default
-      - proxy
+  # tracearr:
+  #   image: ghcr.io/connorgallopo/tracearr:latest
+  #   container_name: tracearr
+  #   depends_on:
+  #     tracearrdb-arrstack:
+  #       condition: service_healthy
+  #     tracearr-redis-arrstack:
+  #       condition: service_healthy
+  #     locket-arrstack:
+  #       condition: service_completed_successfully
+  #   # Override the default entrypoint to run our init script first, which will populate the environment variables from the secrets without
+  #   # writing them to disk, then exec the original entrypoint
+  #   # https://github.com/connorgallopo/Tracearr/blob/main/docker/Dockerfile
+  #   entrypoint: ["/init.sh -f /config/.env"]
+  #   command: ["node", "apps/server/dist/index.js"]
+  #   environment:
+  #     - NODE_ENV=production
+  #     - PORT=3000
+  #     - HOST=0.0.0.0
+  #     - TZ=America/Chicago
+  #     - REDIS_URL=redis://tracearr-redis-arrstack:6379
+  #     - LOG_LEVEL=info
+  #   expose:
+  #     - 3000
+  #   volumes:
+  #     - type: volume
+  #       source: tracearr-arrstack
+  #       target: /data
+  #     - type: volume
+  #       source: locket-arrstack
+  #       target: /config
+  #       volume:
+  #         subpath: tracearr
+  #     - type: bind
+  #       source: ../../common/scripts/init.sh
+  #       target: /init.sh
+  #       read_only: true
+  #   restart: unless-stopped
+  #   networks:
+  #     - default
+  #     - proxy
 
-  tracearrdb-arrstack:
-    image: timescale/timescaledb-ha:pg18.1-ts2.25.0
-    container_name: tracearrdb-arrstack
-    shm_size: 512mb # Required for PostgreSQL shared memory (increase for large imports)
-    ulimits:
-      # TimescaleDB chunks require many file descriptors
-      # Allow unlimited tuple decompression for migrations on compressed hypertables
-      # Increase lock table size for large imports (Tautulli imports with many TimescaleDB chunks)
-      nofile:
-        soft: 65536
-        hard: 65536
-    # Override the default entrypoint to run our init script first, which will populate the environment variables from the secrets without
-    # writing them to disk, then exec the original entrypoint
-    # doesnt seem to be a dockerfile so i hope this works right https://github.com/timescale/timescaledb
-    entrypoint: ["init.sh -f /config/.env"]
-    command: postgres -c timescaledb.license=timescale -c timescaledb.max_tuples_decompressed_per_dml_transaction=0 -c max_locks_per_transaction=4096 -c timescaledb.telemetry_level=off
-    environment:
-      - TZ=America/Chicago
-    volumes:
-      - type: volume
-        source: tracearrdb-arrstack
-        target: /var/lib/postgresql/data
-      - type: volume
-        source: secret-store-arrstack
-        target: /config
-        volume:
-          subpath: tracearrdb
-      - type: bind
-        source: ../../common/scripts/init.sh
-        target: /init.sh
-        read_only: true
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
+  # tracearrdb-arrstack:
+  #   image: timescale/timescaledb-ha:pg18.1-ts2.25.0
+  #   container_name: tracearrdb-arrstack
+  #   shm_size: 512mb # Required for PostgreSQL shared memory (increase for large imports)
+  #   ulimits:
+  #     # TimescaleDB chunks require many file descriptors
+  #     # Allow unlimited tuple decompression for migrations on compressed hypertables
+  #     # Increase lock table size for large imports (Tautulli imports with many TimescaleDB chunks)
+  #     nofile:
+  #       soft: 65536
+  #       hard: 65536
+  #   # Override the default entrypoint to run our init script first, which will populate the environment variables from the secrets without
+  #   # writing them to disk, then exec the original entrypoint
+  #   # doesnt seem to be a dockerfile so i hope this works right https://github.com/timescale/timescaledb
+  #   entrypoint: ["init.sh -f /config/.env"]
+  #   command: postgres -c timescaledb.license=timescale -c timescaledb.max_tuples_decompressed_per_dml_transaction=0 -c max_locks_per_transaction=4096 -c timescaledb.telemetry_level=off
+  #   environment:
+  #     - TZ=America/Chicago
+  #   volumes:
+  #     - type: volume
+  #       source: tracearrdb-arrstack
+  #       target: /var/lib/postgresql/data
+  #     - type: volume
+  #       source: secret-store-arrstack
+  #       target: /config
+  #       volume:
+  #         subpath: tracearrdb
+  #     - type: bind
+  #       source: ../../common/scripts/init.sh
+  #       target: /init.sh
+  #       read_only: true
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   restart: unless-stopped
 
-  tracearr-redis-arrstack:
-    image: redis:8-alpine
-    container_name: tracearr-redis-arrstack
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
+  # tracearr-redis-arrstack:
+  #   image: redis:8-alpine
+  #   container_name: tracearr-redis-arrstack
+  #   command: redis-server --appendonly yes
+  #   volumes:
+  #     - redis_data:/data
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   restart: unless-stopped
 
-  wizarr:
-    image: ghcr.io/wizarrrr/wizarr:latest
-    container_name: wizarr
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/Chicago
-      #- DISABLE_BUILTIN_AUTH=false
-    volumes:
-      - wizarr-arrstack:/data
-    expose:
-      - 5690
-    restart: unless-stopped
-    networks:
-      - default
-      - proxy
+  # wizarr:
+  #   image: ghcr.io/wizarrrr/wizarr:latest
+  #   container_name: wizarr
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=America/Chicago
+  #     #- DISABLE_BUILTIN_AUTH=false
+  #   volumes:
+  #     - wizarr-arrstack:/data
+  #   expose:
+  #     - 5690
+  #   restart: unless-stopped
+  #   networks:
+  #     - default
+  #     - proxy
 
 networks:
   proxy:
@@ -371,31 +373,35 @@ networks:
 
 volumes:
   nas-media:
-    external: true
-  sonarr-arrstack:
     driver: local
-  radarr-arrstack:
-    driver: local
-  qbittorrent-arrstack:
-    driver: local
-  qui-arrstack:
-    driver: local
-  autobrr-arrstack:
-    driver: local
-  prowlarr-arrstack:
-    driver: local
-  profilarr-arrstack:
-    driver: local
-  scraparr-arrstack:
-    driver: local
-  tracarr-arrstack:
-    driver: local
-  tracearrdb-arrstack:
-    driver: local
-  redis_data:
-    driver: local
-  wizarr-arrstack:
-    driver: local
+    driver_opts:
+      type: nfs
+      o: "addr=192.168.1.21,rw,nfsvers=4,nolock,soft"
+      device: ":/mnt/thehub/Data/Media"
+  # sonarr-arrstack:
+  #   driver: local
+  # radarr-arrstack:
+  #   driver: local
+  # qbittorrent-arrstack:
+  #   driver: local
+  # qui-arrstack:
+  #   driver: local
+  # autobrr-arrstack:
+  #   driver: local
+  # prowlarr-arrstack:
+  #   driver: local
+  # profilarr-arrstack:
+  #   driver: local
+  # scraparr-arrstack:
+  #   driver: local
+  # tracarr-arrstack:
+  #   driver: local
+  # tracearrdb-arrstack:
+  #   driver: local
+  # redis_data:
+  #   driver: local
+  # wizarr-arrstack:
+  #   driver: local
   secret-store-arrstack:
     driver: local
     driver_opts:
