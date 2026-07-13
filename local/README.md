@@ -2,6 +2,8 @@
 
 This folder contains the local Docker-based stacks used for self-hosted services and supporting infrastructure.
 
+<sub>Note: "local" refers to stacks intended to run on the same host as the main `dockhand` container (i.e., the services run on the same machine rather than remote hosts). Stacks that run on other machines that are managed by dockhand are located in the other folders in the repository root</sub>
+
 ## Stacks
 
 - [arr-stack](arr-stack) — a media-management helper stack centered around Seerr for requests and related media tooling.
