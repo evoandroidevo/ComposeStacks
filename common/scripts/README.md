@@ -29,7 +29,7 @@ Example: using locket sidecar mode for secrets
 services:
   locket:
     image: ghcr.io/bpbradley/locket:op
-    user: "65532:1000" # OP (1pass cli) complains about file permissions if it doesnt start at 65532 user last i tested.
+    user: "65532:1000" # OP (1pass cli) complains about file permissions if it doesnt start as 65532 user last i tested.
     container_name: locket-dockhand
     security_opt:
       - no-new-privileges:true
@@ -49,7 +49,9 @@ services:
   example-app:
     image: your-image:latest
     entrypoint: ["/init.sh", "-f", "/config/encryption_key"]
-    command: ["/usr/local/bin/start-app"] # check the app's dockerfile ENTRYPOINT and CMD that you are using this init.sh script with to configure the command, if only ENTRYPOINT is used in the dockerfile copy it to command: in the compose file, if ENTRYPOINT and CMD are populated then combine them as an example here is how i have combined postgres's ENTRYPOINT ["docker-entrypoint.sh"] and CMD ["postgres"] to command: ["docker-entrypoint.sh", "postgres"]
+    command: ["/usr/local/bin/start-app"] # check the app's dockerfile ENTRYPOINT and CMD that you are using this init.sh script with to configure the command, if only ENTRYPOINT is used in
+    # the dockerfile copy it to command: in the compose file, if ENTRYPOINT and CMD are populated then combine them as an example here is how i have combined postgres's ENTRYPOINT 
+    # ["docker-entrypoint.sh"] and CMD ["postgres"] to command: ["docker-entrypoint.sh", "postgres"]
     depends_op:
       locket:
         condition: service_healthy # Locket becomes healthy when all secrets have been injected into the files is has been configured for.
