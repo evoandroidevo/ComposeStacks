@@ -77,12 +77,6 @@ secrets:
     file: /location/to/file # this is the location of the file that contains the 1pass token, the user locket runs under must have read permissions to this file.
 ```
 
-In this pattern:
-
-- `init.sh` reads `/run/secrets/locket/app.env`
-- It exports the variables into the process environment
-- It then execs `/your/container/entrypoint`
-
 ### Notes
 
 - The script uses POSIX `sh`, so it is compatible with minimal container images.
