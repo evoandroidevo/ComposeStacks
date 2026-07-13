@@ -1,0 +1,73 @@
+sources:
+  jellyfin_logs:
+    type: file
+    include:
+      - /var/log/jellyfin/jellyfin*.log
+    ignore_older: 86400
+
+transforms:
+  parse_jellyfin:
+    type: remap
+    inputs:
+      - jellyfin_logs
+    source: |
+      raw_msg = .message
+
+      # Insert this before you build ._stream
+      # prefer .file or .path if the file source sets it; fall back to existing .filename or default
+      if .file != null {
+        m = parse_regex(.file, r'(?P<name>[^/\\]+)$')
+        if m != null { .filename = m.name } else { .filename = .file }
+      } elif .path != null {
+        m = parse_regex(.path, r'(?P<name>[^/\\]+)$')
+        if m != null { .filename = m.name } else { .filename = .path }
+      } elif .filename == null {
+        .filename = "jellyfin.log"
+      }
+
+      # 1. Setup mandatory VictoriaLogs _stream object
+      ._stream = {
+        "app": .app || "jellyfin",
+        "host": .host || "jellyfin-debian",
+        "source": .source || "file",
+        "filename": .filename,
+        "env": "production"
+      }
+
+      # 2. Extract timestamp, level, and message using Regex
+      m = parse_regex(raw_msg, r'^\[(?P<timestamp>[^\]]+)\]\s+\[(?P<level>[A-Z]+)\]\s+(?P<message>.*)$')
+
+      if m != null {
+        # Build ISO8601-like timestamp from Jellyfin's format
+        parts = split(m.timestamp, " ")
+        if parts[2] != null {
+          .timestamp = parts[0] + "T" + parts[1] + parts[2]
+        } else {
+          .timestamp = m.timestamp
+        }
+
+        # Normalize level names
+        lvl = m.level
+        if lvl == "INF" { .level = "INFO" } elif lvl == "WRN" { .level = "WARN" } elif lvl == "ERR" { .level = "ERROR" } elif lvl == "DBG" { .level = "DEBUG" } else { .level =lvl }
+
+        # Use the required field name for victorialogs
+        ._msg = m.message
+      } else {
+        # If we cannot parse, preserve the raw message
+        ._msg = raw_msg
+        .timestamp = null
+      }
+
+      # Remove original message field so sink receives _msg
+      del(.message)
+
+sinks:
+  to_victorialogs:
+    type: http
+    inputs:
+      - parse_jellyfin
+    uri: https://logs.<domain>.<tld>/insert/jsonline?_stream_fields=app,env,host,source,filename
+    encoding:
+      codec: json # Use standard json codec
+    framing:
+      method: newline_delimited
