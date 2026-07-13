@@ -33,6 +33,15 @@ To view logs:
 docker compose logs -f
 ```
 
+## Setup directories
+
+Additional setup helpers are available under:
+
+- [setup/docker](setup/docker) for Docker daemon and container log shipping configuration to VictoriaLogs
+- [setup/jellyfin](setup/jellyfin) for Jellyfin log shipping and Vector configuration
+
+The Docker setup covers configuring Docker to forward container logs to VictoriaLogs, while the Jellyfin setup includes a Vector config for forwarding Jellyfin logs to VictoriaLogs and a README with Debian installation steps.
+
 ## Notes
 
 - Grafana is configured to use VictoriaLogs as a datasource.
