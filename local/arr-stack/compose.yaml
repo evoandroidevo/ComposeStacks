@@ -18,31 +18,30 @@
 #   op_token:
 #     file: /etc/op/token
 services:
-
-#   locket:
-#     image: ghcr.io/bpbradley/locket:latest
-#     container_name: locket-arrstack
-#     user: "65532:65532"
-#     cap_drop:
-#       - ALL
-#     security_opt:
-#       - no-new-privileges:true
-#     command:
-#       - "--provider=op"
-#       - "--mode=exit"
-#       - "--inject-failure-policy=error"
-#       - "--op-token=file:/run/secrets/op_token"
-#       - "--map=/scraparr:/run/secrets/locket/scraparr"
-#       - "--map=/qui:/run/secrets/locket/qui"
-#       - "--map=/tracearrdb:/run/secrets/locket/tracearrdb"
-#     volumes:
-#       - ./config/scraparr:/scraparr:ro
-#       - ./config/qui:/qui:ro
-#       - ./config/tracearrdb:/tracearrdb:ro
-#       - secrets-store-arrstack:/run/secrets/locketarr
-#     secrets:
-#       - op_token
-#     restart: unless-stopped
+  #   locket:
+  #     image: ghcr.io/bpbradley/locket:latest
+  #     container_name: locket-arrstack
+  #     user: "65532:65532"
+  #     cap_drop:
+  #       - ALL
+  #     security_opt:
+  #       - no-new-privileges:true
+  #     command:
+  #       - "--provider=op"
+  #       - "--mode=exit"
+  #       - "--inject-failure-policy=error"
+  #       - "--op-token=file:/run/secrets/op_token"
+  #       - "--map=/scraparr:/run/secrets/locket/scraparr"
+  #       - "--map=/qui:/run/secrets/locket/qui"
+  #       - "--map=/tracearrdb:/run/secrets/locket/tracearrdb"
+  #     volumes:
+  #       - ./config/scraparr:/scraparr:ro
+  #       - ./config/qui:/qui:ro
+  #       - ./config/tracearrdb:/tracearrdb:ro
+  #       - secrets-store-arrstack:/run/secrets/locketarr
+  #     secrets:
+  #       - op_token
+  #     restart: unless-stopped
 
   # sonarr:
   #   image: ghcr.io/linuxserver/sonarr:latest
@@ -192,15 +191,15 @@ services:
   #     - proxy
 
   # flaresolver:
-    # image: ghcr.io/flaresolverr/flaresolverr:latest
-    # container_name: flaresolver
-    # environment:
-    #   - PUID=1000
-    #   - PGID=1000
-    #   - TZ=America/Chicago
-    # expose:
-    #   - 8191
-    # restart: unless-stopped
+  # image: ghcr.io/flaresolverr/flaresolverr:latest
+  # container_name: flaresolver
+  # environment:
+  #   - PUID=1000
+  #   - PGID=1000
+  #   - TZ=America/Chicago
+  # expose:
+  #   - 8191
+  # restart: unless-stopped
 
   seerr:
     image: ghcr.io/seerr-team/seerr:latest
@@ -213,7 +212,7 @@ services:
     expose:
       - 5055
     volumes:
-      - seerr-data:/app/config
+      - seerr-data-arrstack:/app/config
     healthcheck:
       test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/settings/public || exit 1
       start_period: 20s
@@ -402,6 +401,8 @@ volumes:
   #   driver: local
   # wizarr-arrstack:
   #   driver: local
+  seerr-data-arrstack:
+    driver: local
   secret-store-arrstack:
     driver: local
     driver_opts:
