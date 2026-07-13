@@ -6,7 +6,7 @@ Use this setup when you want the Docker daemon to send container logs to a victo
 
 - Docker Engine installed and running
 - Root or sudo access to edit the Docker daemon configuration
-- A reachable vicotrialogs endpoint, such as `http://<victorialogs-host>:3100/loki/api/v1/push`
+- A reachable vicotrialogs endpoint, such as `http://<victorialogs-host>:9428/loki/api/v1/push`
 - Network access from the Docker host to the victorialogs server
 
 ## Install the plugin
@@ -25,7 +25,7 @@ Create or update `/etc/docker/daemon.json` with the following settings:
 {
   "log-driver": "loki",
   "log-opts": {
-    "loki-url": "http://<victorialogs-host>:3100/loki/api/v1/push",
+    "loki-url": "http://<victorialogs-host>:9428/loki/api/v1/push",
     "loki-batch-size": "400",
     "loki-retries": "5",
     "loki-timeout": "10s"
