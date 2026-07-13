@@ -26,10 +26,11 @@ sudo cp /path/to/compose-stacks/local/logging-stack/setup/jellyfin/vector-config
 <details>
   <summary>If you are already in the repository root, you can use:</summary>
 
-````bash
+```bash
 sudo mkdir -p /etc/vector
 sudo cp ./local/logging-stack/setup/jellyfin/vector-config.yaml /etc/vector/vector.yaml
 ```
+
 </details>
 
 ## 3. Validate the configuration
@@ -68,4 +69,3 @@ sudo journalctl -u vector -f
 
 - Adjust the file paths in the config if your Jellyfin logs are stored somewhere other than `/var/log/jellyfin/`.
 - If you use a different config filename, update the service or command accordingly.
-````
