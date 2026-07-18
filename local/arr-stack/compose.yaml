@@ -16,7 +16,7 @@
 
 services:
   locket:
-    image: ghcr.io/bpbradley/locket:latest
+    image: ghcr.io/bpbradley/locket:op
     container_name: locket-arrstack
     user: "65532:101000"
     cap_drop:
