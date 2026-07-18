@@ -14,94 +14,151 @@
 # Wizarr: 5690
 # Profilarr: 6869
 
-# secrets:
-#   op_token:
-#     file: /etc/op/token
 services:
-  #   locket:
-  #     image: ghcr.io/bpbradley/locket:latest
-  #     container_name: locket-arrstack
-  #     user: "65532:65532"
-  #     cap_drop:
-  #       - ALL
-  #     security_opt:
-  #       - no-new-privileges:true
-  #     command:
-  #       - "--provider=op"
-  #       - "--mode=exit"
-  #       - "--inject-failure-policy=error"
-  #       - "--op-token=file:/run/secrets/op_token"
-  #       - "--map=/scraparr:/run/secrets/locket/scraparr"
-  #       - "--map=/qui:/run/secrets/locket/qui"
-  #       - "--map=/tracearrdb:/run/secrets/locket/tracearrdb"
-  #     volumes:
-  #       - ./config/scraparr:/scraparr:ro
-  #       - ./config/qui:/qui:ro
-  #       - ./config/tracearrdb:/tracearrdb:ro
-  #       - secrets-store-arrstack:/run/secrets/locketarr
-  #     secrets:
-  #       - op_token
-  #     restart: unless-stopped
+  locket:
+    image: ghcr.io/bpbradley/locket:latest
+    container_name: locket-arrstack
+    user: "65532:101000"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    command:
+      - "--mode=park"
+      - "--inject-failure-policy=error"
+      - "--op-token=file:/run/secrets/op_token"
+      - "--file-mode=0664"
+      - "--dir-mode=0775"
+      # - "--map=/scraparr:/run/secrets/locket/scraparr"
+      # - "--map=/qui:/run/secrets/locket/qui"
+      # - "--map=/tracearrdb:/run/secrets/locket/tracearrdb"
+      - "--map=/sonarr:/run/secrets/locket/sonarr"
+      - "--map=/radarr:/run/secrets/locket/radarr"
+      - "--map=/prowlarr:/run/secrets/locket/prowlarr"
+      - "--secret=profilarr_origin={{ op://DockerSecrets/arr-stack/profilarr-origin }}"
+    volumes:
+      # - ./config/scraparr:/scraparr:ro
+      # - ./config/qui:/qui:ro
+      # - ./config/tracearrdb:/tracearrdb:ro
+      - ./config/sonarr:/sonarr:ro
+      - ./config/radarr:/radarr:ro
+      - ./config/prowlarr:/prowlarr:ro
+      - secrets-store-arrstack:/run/secrets/locket
+    secrets:
+      - op_token
+    restart: unless-stopped
 
-  # sonarr:
-  #   image: ghcr.io/linuxserver/sonarr:latest
-  #   container_name: sonarr
-  #   environment:
-  #     - PUID=1000
-  #     - PGID=1000
-  #     - TZ=America/Chicago
-  #   volumes:
-  #     - sonarr-arrstack:/config
-  #     - nas-media:/media
-  #   expose:
-  #     - 8989
-  #   restart: unless-stopped
-  #   networks:
-  #     - default
-  #     - proxy
+  sonarr:
+    image: ghcr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    user: "101000:101000"
+    restart: no
+    depends_on:
+      locket:
+        condition: service_healthy
+    environment:
+      - TZ=America/Chicago
+    volumes:
+      - sonarr-arrstack:/config
+      - nas-media:/media
+      - type: volume
+        source: secrets-store-arrstack
+        target: /config/config.xml
+        volume:
+          subpath: sonarr/config.xml
+    expose:
+      - 8989
+    networks:
+      - default
+      - proxy
 
-  # radarr:
-  #   image: ghcr.io/linuxserver/radarr:latest
-  #   container_name: radarr
-  #   environment:
-  #     - PUID=1000
-  #     - PGID=1000
-  #     - TZ=America/Chicago
-  #   volumes:
-  #     - radarr-arrstack:/config
-  #     - nas-media:/media
-  #   expose:
-  #     - 7878
-  #   restart: unless-stopped
-  #   networks:
-  #     - default
-  #     - proxy
+  radarr:
+    image: ghcr.io/linuxserver/radarr:latest
+    container_name: radarr
+    user: "101000:101000"
+    restart: no
+    depends_on:
+      locket:
+        condition: service_healthy
+    environment:
+      - TZ=America/Chicago
+    volumes:
+      - radarr-arrstack:/config
+      - nas-media:/media
+      - type: volume
+        source: secrets-store-arrstack
+        target: /config/config.xml
+        volume:
+          subpath: radarr/config.xml
+    expose:
+      - 7878
+    networks:
+      - default
+      - proxy
 
-  # qbittorrent:
-  #   image: ghcr.io/linuxserver/qbittorrent:latest
-  #   container_name: qbittorrent
-  #   environment:
-  #     - PUID=1000
-  #     - PGID=1000
-  #     - TZ=America/Chicago
-  #     - WEBUI_PORT=8080
-  #   volumes:
-  #     - qbittorrent-arrstack:/config
-  #     - type: volume
-  #       source: nas-media
-  #       target: /downloads
-  #       volume:
-  #         subpath: Torrents
-  #   expose:
-  #     - 8080
-  #   ports:
-  #     - "6881:6881"
-  #     - "6881:6881/udp"
-  #   stop_grace_period: 10s"
-  #   restart: unless-stopped
-  #   networks:
-  #     - default
-  #     - proxy
+  prowlarr:
+    image: ghcr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    user: "101000:101000"
+    restart: no
+    depends_on:
+      locket:
+        condition: service_healthy
+    environment:
+      - TZ=America/Chicago
+    volumes:
+      - prowlarr-arrstack:/config
+      - type: volume
+        source: secrets-store-arrstack
+        target: /config/config.xml
+        volume:
+          subpath: prowlarr/config.xml
+    expose:
+      - 9696
+    networks:
+      - default
+      - proxy
+
+  qbittorrent:
+    image: ghcr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    user: "101000:101000"
+    restart: unless-stopped
+    environment:
+      - TZ=America/Chicago
+      - WEBUI_PORT=8080
+      - TORRENTING_PORT=6881
+    volumes:
+      - qbittorrent-arrstack:/config
+      - type: volume
+        source: nas-media
+        target: /downloads
+        volume:
+          subpath: Torrents
+    expose:
+      - 8080
+    ports:
+      - "6881:6881"
+      - "6881:6881/udp"
+    stop_grace_period: "10s"
+    networks:
+      - default
+      - proxy
+
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    restart: unless-stopped
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_FILE=${LOG_FILE:-none}
+      - LOG_HTML=${LOG_HTML:-false}
+      - CAPTCHA_SOLVER=${CAPTCHA_SOLVER:-none}
+      - TZ=America/Chicago
+    expose:
+      - 8191
+    volumes:
+      - flaresolver-data:/config
 
   # qui:
   #   image: ghcr.io/autobrr/qui:latest
@@ -155,51 +212,36 @@ services:
   #     - default
   #     - proxy
 
-  # prowlarr:
-  #   image: ghcr.io/linuxserver/prowlarr:latest
-  #   container_name: prowlarr
-  #   environment:
-  #     - PUID=1000
-  #     - PGID=1000
-  #     - TZ=America/Chicago
-  #   volumes:
-  #     - prowlarr-arrstack:/config
-  #   expose:
-  #     - 9696
-  #   restart: unless-stopped
-  #   networks:
-  #     - default
-  #     - proxy
-
-  # profilarr:
-  #   image: ghcr.io/dictionarry-hub/profilarr:latest
-  #   container_name: profilarr
-  #   environment:
-  #     - PUID=1000
-  #     - PGID=1000
-  #     - PORT=6869
-  #     - HOST=0.0.0.0
-  #     - UMASK=0022
-  #     - TZ=America/Chicago
-  #   volumes:
-  #     - profilarr-arrstack:/config
-  #   expose:
-  #     - 6869
-  #   restart: unless-stopped
-  #   networks:
-  #     - default
-  #     - proxy
-
-  # flaresolver:
-  # image: ghcr.io/flaresolverr/flaresolverr:latest
-  # container_name: flaresolver
-  # environment:
-  #   - PUID=1000
-  #   - PGID=1000
-  #   - TZ=America/Chicago
-  # expose:
-  #   - 8191
-  # restart: unless-stopped
+  # TODO: investigate how profilarr handles config files, check if they can be added to the repo for no setup on first run
+  profilarr:
+    image: ghcr.io/dictionarry-hub/profilarr:latest
+    container_name: profilarr
+    user: "101000:101000"
+    restart: no
+    depends_on:
+      locket:
+        condition: service_healthy
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - PORT=6869
+      - HOST=0.0.0.0
+      - UMASK=0022
+      - TZ=America/Chicago
+      - ORIGIN_FILE=/run/secrets/profilarr_origin # TODO: check if locket adds a trailing newline to the secret file, if so, we need to trim it before using it
+    volumes:
+      - profilarr-arrstack:/config
+      - type: volume
+        source: secrets-store-arrstack
+        target: /run/secrets/profilarr_origin
+        read_only: true
+        volume:
+          subpath: profilarr_origin
+    expose:
+      - 6869
+    networks:
+      - default
+      - proxy
 
   seerr:
     image: ghcr.io/seerr-team/seerr:latest
@@ -370,6 +412,10 @@ networks:
   proxy:
     external: true
 
+secrets:
+  op_token:
+    file: /etc/op/token
+
 volumes:
   nas-media:
     driver: local
@@ -377,20 +423,22 @@ volumes:
       type: nfs
       o: "addr=192.168.1.21,rw,nfsvers=4,nolock,soft"
       device: ":/mnt/thehub/Data/Media"
-  # sonarr-arrstack:
-  #   driver: local
-  # radarr-arrstack:
-  #   driver: local
-  # qbittorrent-arrstack:
-  #   driver: local
+  sonarr-arrstack:
+    driver: local
+  radarr-arrstack:
+    driver: local
+  prowlarr-arrstack:
+    driver: local
+  flaresolver-data:
+    driver: local
+  qbittorrent-arrstack:
+    driver: local
   # qui-arrstack:
   #   driver: local
   # autobrr-arrstack:
   #   driver: local
-  # prowlarr-arrstack:
-  #   driver: local
-  # profilarr-arrstack:
-  #   driver: local
+  profilarr-arrstack:
+    driver: local
   # scraparr-arrstack:
   #   driver: local
   # tracarr-arrstack:
