@@ -12,6 +12,15 @@ fi
 
 file=config.xml
 
+print_path_info() {
+	path=$1
+	if [ -e "$path" ] || [ -L "$path" ]; then
+		ls -ld "$path" 2>/dev/null || true
+	else
+		printf '%s: does not exist\n' "$path"
+	fi
+}
+
 resolve_link() {
 	target=$1
 	if command -v readlink >/dev/null 2>&1; then
@@ -65,6 +74,9 @@ for arg in "$@"; do
 		if [ ! -d "$parent_dir" ]; then
 			if ! mkdir -p "$parent_dir" 2>/dev/null; then
 				printf 'Warning: could not create %s (permissions?)\n' "$parent_dir" >&2
+				printf 'Parent dir permission info:\n' >&2
+				print_path_info "$parent_dir" >&2
+				print_path_info "/run/secret" >&2
 			fi
 		fi
 
@@ -80,6 +92,10 @@ for arg in "$@"; do
 			printf '%s: CREATED -> %s\n' "$arg" "$expected"
 		else
 			printf '%s: FAILED to create symlink -> %s\n' "$arg" "$expected" >&2
+			printf 'Current working directory info:\n' >&2
+			print_path_info "." >&2
+			printf 'Target file info:\n' >&2
+			print_path_info "$file" >&2
 			exit_status=1
 		fi
 	fi
