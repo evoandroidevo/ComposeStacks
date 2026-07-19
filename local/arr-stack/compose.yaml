@@ -15,6 +15,17 @@
 # Profilarr: 6869
 
 services:
+  init:
+    image: busybox:musl
+    container_name: init-arrstack
+    user: "101000:101000"
+    command: ["/bin/sh", "-c", "symlink.sh", "/radarr", "/sonarr", "/prowlarr"] # Checks for symlink in the volumes that should have the config files static
+    restart: "no"
+    volumes:
+      - radarr-arrstack:/radarr
+      - sonarr-arrstack:/sonarr
+      - prowlarr-arrstack:/prowlarr
+
   locket:
     image: ghcr.io/bpbradley/locket:op
     container_name: locket-arrstack
@@ -56,6 +67,8 @@ services:
     depends_on:
       locket:
         condition: service_healthy
+      init:
+        condition: service_completed_successfully
     environment:
       - TZ=America/Chicago
     volumes:
@@ -63,9 +76,9 @@ services:
       - nas-media:/media
       - type: volume
         source: secrets-store-arrstack
-        target: /config/config.xml
+        target: /run/secrets/sonarr
         volume:
-          subpath: sonarr/config.xml
+          subpath: sonarr
     expose:
       - 8989
     networks:
@@ -80,6 +93,8 @@ services:
     depends_on:
       locket:
         condition: service_healthy
+      init:
+        condition: service_completed_successfully
     environment:
       - TZ=America/Chicago
     volumes:
@@ -87,9 +102,9 @@ services:
       - nas-media:/media
       - type: volume
         source: secrets-store-arrstack
-        target: /config/config.xml
+        target: /run/secrets/radarr
         volume:
-          subpath: radarr/config.xml
+          subpath: radarr
     expose:
       - 7878
     networks:
@@ -104,15 +119,17 @@ services:
     depends_on:
       locket:
         condition: service_healthy
+      init:
+        condition: service_completed_successfully
     environment:
       - TZ=America/Chicago
     volumes:
       - prowlarr-arrstack:/config
       - type: volume
         source: secrets-store-arrstack
-        target: /config/config.xml
+        target: /run/secrets/prowlarr
         volume:
-          subpath: prowlarr/config.xml
+          subpath: prowlarr
     expose:
       - 9696
     networks:
