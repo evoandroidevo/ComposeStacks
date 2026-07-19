@@ -115,6 +115,7 @@ for arg in "$@"; do
 		continue
 	fi
 
+	file="$path/config.xml"
 	expected="/run/secret/$path/config.xml"
 
 	if [ -L "$file" ]; then
@@ -138,18 +139,21 @@ for arg in "$@"; do
 		fi
 
 	else
-		# Not a symlink (may exist or not). Create parent dir for target if possible.
-		parent_dir=$(dirname "$expected")
-		if [ ! -d "$parent_dir" ]; then
-			if ! mkdir -p "$parent_dir" 2>/dev/null; then
-				printf 'Warning: could not create %s (permissions?)\n' "$parent_dir" >&2
-				printf 'Parent dir permission info:\n' >&2
-				print_path_info "$parent_dir" >&2
-				print_path_info "/run/secret" >&2
-			fi
+		# Not a symlink (may exist or not). Fail if the supplied path does not exist.
+		if [ ! -d "$path" ]; then
+			printf '%s: path does not exist\n' "$arg" >&2
+			exit_status=1
+			continue
 		fi
 
-		if [ -e "$file" ]; then
+		file_dir=$(dirname "$file")
+		if [ ! -d "$file_dir" ]; then
+			printf '%s: path does not exist\n' "$arg" >&2
+			exit_status=1
+			continue
+		fi
+
+		if [ -e "$file" ] && [ ! -L "$file" ]; then
 			# Backup existing file before replacing
 			ts=$(date +%s 2>/dev/null || printf '%s' "$(date)")
 			mv "$file" "${file}.$ts.orig" 2>/dev/null || rm -f "$file" 2>/dev/null || true
