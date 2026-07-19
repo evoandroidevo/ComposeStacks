@@ -19,7 +19,7 @@ services:
     image: busybox:musl
     container_name: init-arrstack
     user: "101000:101000"
-    command: ["/bin/sh", "-c", "/symlink.sh", "/radarr", "/sonarr", "/prowlarr"] # Checks for symlink in the volumes that should have the config files static
+    command: ["/bin/sh", "-c", "/symlink.sh /radarr /sonarr /prowlarr"] # Checks for symlink in the volumes that should have the config files static
     restart: "no"
     volumes:
       - radarr-arrstack:/radarr
