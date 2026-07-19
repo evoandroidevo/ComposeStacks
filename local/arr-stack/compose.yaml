@@ -451,7 +451,7 @@ volumes:
   #   driver: local
   seerr-data-arrstack:
     driver: local
-  secret-store-arrstack:
+  secrets-store-arrstack:
     driver: local
     driver_opts:
       type: tempfs
