@@ -454,5 +454,5 @@ volumes:
   secrets-store-arrstack:
     driver: local
     driver_opts:
-      type: tempfs
+      type: tmpfs
       device: tmpfs
