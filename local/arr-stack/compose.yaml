@@ -18,7 +18,6 @@ services:
   init:
     image: busybox:musl
     container_name: init-arrstack
-    user: "101000:101000"
     depends_on:
       locket:
         condition: service_healthy

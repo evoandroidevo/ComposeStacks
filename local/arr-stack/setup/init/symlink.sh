@@ -1,16 +1,79 @@
 #!/bin/sh
 # Ensure `config.xml` is a symlink to `/run/secret/$PATH/config.xml`.
 # If `config.xml` doesn't exist or is not a symlink, create/replace it.
-# Usage: symlink.sh PATH...
+# Usage: symlink.sh [--user USER] [--group GROUP] PATH...
 
 set -eu
 
+usage() {
+	printf 'Usage: %s [--user USER] [--group GROUP] PATH...\n' "${0##*/}" >&2
+}
+
 if [ "$#" -eq 0 ]; then
-	printf 'Usage: %s PATH...\n' "${0##*/}" >&2
+	usage
 	exit 2
 fi
 
 file=config.xml
+owner_spec=
+owner_user=
+owner_group=
+
+while [ "$#" -gt 0 ]; do
+	case "$1" in
+		--user)
+			if [ "$#" -lt 2 ]; then
+				printf 'Missing value for --user\n' >&2
+				usage
+				exit 2
+			fi
+			owner_user=$2
+			shift 2
+			;;
+		--group)
+			if [ "$#" -lt 2 ]; then
+				printf 'Missing value for --group\n' >&2
+				usage
+				exit 2
+			fi
+			owner_group=$2
+			shift 2
+			;;
+		-h|--help)
+			usage
+			exit 0
+			;;
+		--)
+			shift
+			break
+			;;
+		-*)
+			printf 'Unknown option: %s\n' "$1" >&2
+			usage
+			exit 2
+			;;
+		*)
+			break
+			;;
+	esac
+done
+
+if [ -n "$owner_user" ]; then
+	owner_spec=$owner_user
+fi
+if [ -n "$owner_group" ]; then
+	if [ -n "$owner_spec" ]; then
+		owner_spec="$owner_spec:$owner_group"
+	else
+		owner_spec=":$owner_group"
+	fi
+fi
+
+if [ "$#" -eq 0 ]; then
+	printf 'No PATH arguments supplied\n' >&2
+	usage
+	exit 2
+fi
 
 print_path_info() {
 	path=$1
@@ -67,6 +130,12 @@ for arg in "$@"; do
 			printf '%s: MISMATCH (points to %s, expected %s)\n' "$arg" "$link_target" "$expected" >&2
 			exit_status=1
 		fi
+		if [ -n "$owner_spec" ]; then
+			if ! chown -h "$owner_spec" "$file" 2>/dev/null; then
+				printf 'Could not set ownership %s on %s\n' "$owner_spec" "$file" >&2
+				exit_status=1
+			fi
+		fi
 
 	else
 		# Not a symlink (may exist or not). Create parent dir for target if possible.
@@ -97,6 +166,12 @@ for arg in "$@"; do
 			printf 'Target file info:\n' >&2
 			print_path_info "$file" >&2
 			exit_status=1
+		fi
+		if [ -n "$owner_spec" ]; then
+			if ! chown -h "$owner_spec" "$file" 2>/dev/null; then
+				printf 'Could not set ownership %s on %s\n' "$owner_spec" "$file" >&2
+				exit_status=1
+			fi
 		fi
 	fi
 done
