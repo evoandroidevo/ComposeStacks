@@ -28,7 +28,7 @@ services:
       ] # Checks for symlink in the volumes that should have the config files static
     restart: "no"
     volumes:
-      - secrets-store-arrstack:/run/secrets
+      - secrets-store-arrstack:/run/secret
       - radarr-arrstack:/radarr
       - sonarr-arrstack:/sonarr
       - prowlarr-arrstack:/prowlarr
