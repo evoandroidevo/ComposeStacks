@@ -94,7 +94,7 @@ services:
     depends_on:
       locket:
         condition: service_healthy
-      init-config-arrstack:
+      init-config:
         condition: service_completed_successfully
     environment:
       - TZ=America/Chicago
@@ -120,7 +120,7 @@ services:
     depends_on:
       locket:
         condition: service_healthy
-      init-config-arrstack:
+      init-config:
         condition: service_completed_successfully
     environment:
       - TZ=America/Chicago
@@ -146,7 +146,7 @@ services:
     depends_on:
       locket:
         condition: service_healthy
-      init-config-arrstack:
+      init-config:
         condition: service_completed_successfully
     environment:
       - TZ=America/Chicago
