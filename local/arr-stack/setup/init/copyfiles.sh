@@ -6,7 +6,26 @@ GROUP=""
 RUN_ONCE_FLAG="${RUN_ONCE_FLAG:-}"
 
 usage() {
-    echo "Usage: $0 --user <user> --group <group> <source1> [source2 ...]" >&2
+    echo "Usage: $0 --user <user> --group <group> </path|/run/secret/path/config.xml> [...]" >&2
+}
+
+resolve_paths() {
+    case "$1" in
+        /run/secret/*/config.xml)
+            SRC="$1"
+            DEST="/${1#/run/secret/}"
+            ;;
+        /*)
+            SRC="/run/secret${1}/config.xml"
+            DEST="$1/config.xml"
+            ;;
+        *)
+            echo "Error: Path '$1' must be either /<path> or /run/secret/<path>/config.xml." >&2
+            exit 1
+            ;;
+    esac
+
+    DEST_DIR=$(dirname "$DEST")
 }
 
 while [ "$#" -gt 0 ]; do
@@ -46,19 +65,8 @@ if [ -z "$USER" ] || [ -z "$GROUP" ] || [ "$#" -lt 1 ]; then
     exit 1
 fi
 
-FIRST_SRC="$1"
-case "$FIRST_SRC" in
-    /run/secret/*/config.xml)
-        ;;
-    *)
-        echo "Error: Source path '$FIRST_SRC' must be in the form /run/secret/<path>/config.xml." >&2
-        exit 1
-        ;;
-esac
-
-FIRST_DEST="/${FIRST_SRC#/run/secret/}"
-FIRST_DEST_DIR=$(dirname "$FIRST_DEST")
-RUN_ONCE_FLAG="${RUN_ONCE_FLAG:-$FIRST_DEST_DIR/.copyfiles.done}"
+resolve_paths "$1"
+RUN_ONCE_FLAG="${RUN_ONCE_FLAG:-$DEST_DIR/.copyfiles.done}"
 
 if [ -f "$RUN_ONCE_FLAG" ]; then
     echo "Run-once flag '$RUN_ONCE_FLAG' exists; skipping copyfiles script."
@@ -70,18 +78,8 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-for SRC in "$@"; do
-    case "$SRC" in
-        /run/secret/*/config.xml)
-            ;;
-        *)
-            echo "Error: Source path '$SRC' must be in the form /run/secret/<path>/config.xml." >&2
-            exit 1
-            ;;
-    esac
-
-    DEST="/${SRC#/run/secret/}"
-    DEST_DIR=$(dirname "$DEST")
+for ARG in "$@"; do
+    resolve_paths "$ARG"
 
     if [ ! -f "$SRC" ]; then
         echo "Error: Source secret file '$SRC' does not exist." >&2
