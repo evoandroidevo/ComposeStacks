@@ -15,20 +15,35 @@
 # Profilarr: 6869
 
 services:
-  init:
+  init-config:
     image: busybox:musl
-    container_name: init-arrstack
+    container_name: init-config-arrstack
     depends_on:
       locket:
         condition: service_healthy
-    command: ["/bin/sh", "-c", "/symlink.sh --user 101000 --group 101000 /radarr /sonarr /prowlarr"] # Checks for symlink in the volumes that should have the config files static
+    command: ["/bin/sh", "-c", "/copyfiles.sh --user 101000 --group 101000 /radarr /sonarr /prowlarr"] # Checks for symlink in the volumes that should have the config files static
     restart: "no"
     volumes:
       - secrets-store-arrstack:/run/secrets
       - radarr-arrstack:/radarr
       - sonarr-arrstack:/sonarr
       - prowlarr-arrstack:/prowlarr
-      - ./setup/init/symlink.sh:/symlink.sh:ro
+      - ./setup/init/copyfiles.sh:/copyfiles.sh:ro
+
+  init-volumes:
+    image: busybox:musl
+    container_name: init-volumes-arrstack
+    command: ["/bin/sh", "-c", "/volumeowner.sh --user 101000 --group 101000 /radarr /sonarr /prowlarr /profilarr /qbittorrent"] # Sets the owner of the volumes to the user/group that the containers run as, so they can write to them
+    restart: "no"
+    volumes:
+      - sonarr-arrstack:/sonarr
+      - radarr-arrstack:/radarr
+      - prowlarr-arrstack:/prowlarr
+      - qbittorrent-arrstack:/qbittorrent
+      - profilarr-arrstack:/profilarr
+      - ./setup/init/volumeowner.sh:/volumeowner.sh:ro
+    profiles:
+      - "init-volumes"
 
   locket:
     image: ghcr.io/bpbradley/locket:op
