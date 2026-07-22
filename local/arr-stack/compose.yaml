@@ -106,8 +106,8 @@ services:
         target: /run/secrets/sonarr
         volume:
           subpath: sonarr
-    expose:
-      - 8989
+    ports:
+      - 8989:8989
     networks:
       - default
       - proxy
@@ -132,8 +132,8 @@ services:
         target: /run/secrets/radarr
         volume:
           subpath: radarr
-    expose:
-      - 7878
+    ports:
+      - 7878:7878
     networks:
       - default
       - proxy
@@ -157,8 +157,8 @@ services:
         target: /run/secrets/prowlarr
         volume:
           subpath: prowlarr
-    expose:
-      - 9696
+    ports:
+      - 9696:9696
     networks:
       - default
       - proxy
@@ -179,9 +179,10 @@ services:
         target: /downloads
         volume:
           subpath: Torrents
-    expose:
-      - 8080
+    # expose:
+    #   - 8080
     ports:
+      - "8080:8080"
       - "6881:6881"
       - "6881:6881/udp"
     stop_grace_period: "10s"
