@@ -103,9 +103,9 @@ access_control:
   networks:
     - name: 'internal'
       networks:
-        - '192.168.0.0/16'
+        - '192.168.1.0/24'
     - name: 'VPN'
-      networks: '10.9.0.0/16'
+      networks: '192.168.6.0/24'
 
 {{ op://DockerSecrets/authelia-lldap/rules.yml }}
 
