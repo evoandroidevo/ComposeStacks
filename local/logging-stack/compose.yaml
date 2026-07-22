@@ -76,10 +76,10 @@ services:
   #  storing logs and serving read queries.
   victorialogs:
     image: victoriametrics/victoria-logs:v1.51.0
-    ports:
-      - 9428:9428
+    expose:
+      - 9428
     command:
-      - "--storageDataPath=/vlogs"
+      - "--storageDataPath=/vlogs --retentionPeriod=100y --retention.maxDiskUsagePercent=35"
     volumes:
       - vldata:/vlogs
     restart: always
