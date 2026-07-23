@@ -100,12 +100,6 @@ privacy_policy:
 
 access_control:
   default_policy: deny
-  networks:
-    - name: 'internal'
-      networks:
-        - '192.168.1.0/24'
-    - name: 'VPN'
-      networks: '192.168.6.0/24'
 
 {{ op://DockerSecrets/authelia-lldap/rules.yml }}
 
