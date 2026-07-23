@@ -1,2 +1,3 @@
 local/authelia-lldap/config/authelia/rules.yml
 local/proxy/config/caddy/Caddyfile.config
+local/proxy/config/caddy/Caddyfile.caddyfile

@@ -1,1 +1,1 @@
-{{ "op://DockerSecrets/Proxy-config/Caddyfile.config" }}
+{{ "op://DockerSecrets/Proxy-config/Caddyfile.caddyfile" }}
