@@ -165,8 +165,8 @@ services:
     #   - 8080
     ports:
       - "8080:8080"
-      - "6881:6881"
-      - "6881:6881/udp"
+      - "33237:6881"
+      - "33237:6881/udp"
     stop_grace_period: "10s"
     networks:
       - default
