@@ -20,20 +20,21 @@ totp:
 theme: dark
 
 webauthn:
+  enable_passkey_login: true
   disable: false
   timeout: '60 seconds'
   display_name: '{{ "op://DockerSecrets/authelia-lldap/webauthn-display_name" }}'
-  attestation_conveyance_preference: 'indirect'
+  attestation_conveyance_preference: 'direct'
   filtering:
     permitted_aaguids: []
     prohibited_aaguids: []
-    prohibit_backup_eligibility: false
+    prohibit_backup_eligibility: true
   selection_criteria:
     attachment: ''
     discoverability: 'preferred'
     user_verification: 'preferred'
   metadata:
-    enabled: false
+    enabled: true
     validate_trust_anchor: true
     validate_entry: true
     validate_entry_permit_zero_aaguid: false
