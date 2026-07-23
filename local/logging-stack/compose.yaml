@@ -76,7 +76,7 @@ services:
   #  storing logs and serving read queries.
   victorialogs:
     image: victoriametrics/victoria-logs:v1.51.0
-    expose:
+    ports:
       - 9428
     command:
       - "-storageDataPath=/vlogs"
