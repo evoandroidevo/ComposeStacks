@@ -79,7 +79,7 @@ services:
     expose:
       - 9428
     command:
-      - "--storageDataPath=/vlogs --retentionPeriod=100y --retention.maxDiskUsagePercent=35"
+      - "-storageDataPath=/vlogs -retentionPeriod=100y -retention.maxDiskUsagePercent=35"
     volumes:
       - vldata:/vlogs
     restart: always
