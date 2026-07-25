@@ -164,8 +164,8 @@ services:
     expose:
       - 8080
     ports:
-      - "6881:6881"
-      - "6881:6881/udp"
+      - "33237:6881"
+      - "33237:6881/udp"
     stop_grace_period: "10s"
     networks:
       - default
