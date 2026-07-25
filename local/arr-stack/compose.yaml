@@ -74,8 +74,8 @@ services:
         target: /run/secrets/sonarr
         volume:
           subpath: sonarr
-    ports:
-      - 8989:8989
+    expose:
+      - 8989
     networks:
       - default
       - proxy
@@ -106,8 +106,8 @@ services:
         target: /run/secrets/radarr
         volume:
           subpath: radarr
-    ports:
-      - 7878:7878
+    expose:
+      - 7878
     networks:
       - default
       - proxy
@@ -137,8 +137,8 @@ services:
         target: /run/secrets/prowlarr
         volume:
           subpath: prowlarr
-    ports:
-      - 9696:9696
+    expose:
+      - 9696
     networks:
       - default
       - proxy
@@ -161,10 +161,9 @@ services:
         target: /downloads
         volume:
           subpath: Torrents
-    # expose:
-    #   - 8080
+    expose:
+      - 8080
     ports:
-      - "8080:8080"
       - "6881:6881"
       - "6881:6881/udp"
     stop_grace_period: "10s"
@@ -186,6 +185,21 @@ services:
       - 8191
     volumes:
       - flaresolver-data:/config
+
+  arr-dashboard:
+    image: khak1s/arr-dashboard:latest
+    container_name: arr-dashboard
+    restart: no
+    environment:
+      - PUID=1000  # Set to your user ID (run `id -u` on host)
+      - PGID=1000  # Set to your group ID (run `id -g` on host)
+    volumes:
+      - arrstack-dashboard:/config
+    expose:
+      - 3000
+    networks:
+      - proxy
+      - default
 
   # qui:
   #   image: ghcr.io/autobrr/qui:latest
@@ -477,6 +491,8 @@ volumes:
   # wizarr-arrstack:
   #   driver: local
   seerr-data-arrstack:
+    driver: local
+  arrstack-dashboard:
     driver: local
   secrets-store-arrstack:
     driver: local
