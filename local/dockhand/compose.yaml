@@ -52,6 +52,8 @@ services:
       - ALLOW_RESTARTS=1
       # Optional: enable for terminal access
       # - EXEC=1
+      - ALLOW_PAUSE=1
+      - ALLOW_UNPAUSE=1
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
@@ -79,8 +81,8 @@ services:
         "/run/secrets/locket/encryption_key",
       ]
     command: ["/usr/local/bin/docker-entrypoint.sh"]
-    ports:
-      - 3000:3000
+    expose:
+      - 3000
     volumes:
       - ../../common/scripts/init.sh:/init.sh:ro
       - secrets-store-dockhand:/run/secrets/locket:ro
