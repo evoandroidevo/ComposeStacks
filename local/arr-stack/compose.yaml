@@ -153,7 +153,7 @@ services:
       #- PGID=101000 # then comment out and use user: "101000:101000" for better security
       - TZ=America/Chicago
       - WEBUI_PORT=8080
-      - TORRENTING_PORT=6881
+      - TORRENTING_PORT=33237
     volumes:
       - qbittorrent-arrstack:/config
       - type: volume
@@ -164,8 +164,8 @@ services:
     expose:
       - 8080
     ports:
-      - "33237:6881"
-      - "33237:6881/udp"
+      - "33237:33237"
+      - "33237:33237/udp"
     stop_grace_period: "10s"
     networks:
       - default
