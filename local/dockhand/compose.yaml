@@ -1,9 +1,7 @@
-# Working correctly
-# need to make sure security is good still.
 services:
   locket:
     image: ghcr.io/bpbradley/locket:op
-    # OP complains about file permissions if it doesnt have 65532 user or group.
+    # OP complains about file permissions if it doesnt have 65532 user or group. TODO: https://github.com/bpbradley/locket/issues/89
     user: "65532:1000"
     container_name: locket-dockhand
     security_opt:
@@ -11,12 +9,10 @@ services:
     cap_drop:
       - ALL
     command:
-      - "--provider=op"
-      # Park is needed otherwise when the continer exits it will remove the files creates in the tempfs volume
+      # Park is needed otherwise when the continer exits it will remove the files creates in the tmpfs volume
       - "--mode=park"
       - "--inject-failure-policy=error"
       - "--log-level=info"
-      - "--user=65532:1000"
       # -rw-r----- file mode
       - "--file-mode=0640"
       - "--dir-mode=0740"
@@ -59,7 +55,6 @@ services:
     networks:
       - socket-proxy
 
-  # TODO: Need to look about a config file that can have enviroments added by code.
   dockhand:
     image: fnsys/dockhand:latest
     container_name: dockhand
