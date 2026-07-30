@@ -1,0 +1,61 @@
+services:
+  locket:
+    image: ghcr.io/bpbradley/locket:op
+    user: "65532:0"
+    container_name: locket-proxy
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    command:
+      # one-shot removes the secrets before they can be imported switching to park.
+      - "--mode=park"
+      - "--inject-failure-policy=error"
+      - "--log-level=info"
+      # -r--r--r-- file mode
+      - "--file-mode=0444"
+      - "--dir-mode=0755"
+      - "--op-token=file:/run/secrets/op_token"
+      - "--map=/wiki:/run/secrets/locket/wiki"
+      #- "--map=/crowdsec:/run/secrets/locket/crowdsec"
+    secrets:
+      - op_token
+    volumes:
+      # Mount in your actual secret templates, with secret references
+      - ./config/wiki:/wiki:ro
+      #- ./config/crowdsec/secrets:crowdsec:ro
+      # Mount in your output directory, where you want secrets materialized
+      - secrets-store-wiki:/run/secrets/locket
+
+  leafwiki:
+    image: ghcr.io/perber/leafwiki:latest
+    container_name: leafwiki
+    user: 1000:1000
+    expose:
+      - 8080
+    environment:
+      - LEAFWIKI_JWT_SECRET=yourSecret
+      - LEAFWIKI_ADMIN_PASSWORD=yourPassword
+      - LEAFWIKI_ALLOW_INSECURE=true  # Required for plain HTTP. Omit for HTTPS (ensure `X-Forwarded-Proto: https` is forwarded).
+    volumes:
+      - leafwiki-data:/app/data
+    restart: unless-stopped
+
+secrets:
+  op_token:
+    file: /etc/op/token
+
+networks:
+  default: {}
+  proxy:
+    external: true
+    
+volumes:
+  leafwiki-data:
+    driver: local
+  secrets-store-wiki:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: uid=65532,gid=0,mode=760
