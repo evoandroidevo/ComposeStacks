@@ -17,7 +17,6 @@ services:
       - "--dir-mode=0755"
       - "--op-token=file:/run/secrets/op_token"
       - "--map=/wiki:/run/secrets/locket/wiki"
-      #- "--map=/crowdsec:/run/secrets/locket/crowdsec"
     secrets:
       - op_token
     volumes:
@@ -29,17 +28,35 @@ services:
 
   leafwiki:
     image: ghcr.io/perber/leafwiki:latest
-    container_name: leafwiki
+    container_name: wiki
     user: 1000:1000
-    expose:
-      - 8080
+    depends_on:
+      locket: service_healthy
+    entrypoint: ["/init.sh", "-f", "/run/secrets/temp.env"]
+    #expose:
+    #  - 8080
+    ports:
+      - 8080:8080
     environment:
-      - LEAFWIKI_JWT_SECRET=yourSecret
-      - LEAFWIKI_ADMIN_PASSWORD=yourPassword
+      - LEAFWIKI_HOST=0.0.0.0
+      - LEAFWIKI_PORT=8080
       - LEAFWIKI_ALLOW_INSECURE=true  # Required for plain HTTP. Omit for HTTPS (ensure `X-Forwarded-Proto: https` is forwarded).
+      - LEAFWIKI_DISABLE_AUTH=true # Enabled for testing
+      - LEAFWIKI_LOG_FORMAT=json
+      - LEAFWIKI_DATA_DIR=/app/data
     volumes:
+      - ./init/init.sh:/init.sh:ro
       - leafwiki-data:/app/data
+      - type: volume
+        source: secrets-store-wiki
+        target: /run/secrets
+        read_only: true
+        volume:
+          subpath: wiki
     restart: unless-stopped
+    networks:
+      - default
+      - proxy
 
 secrets:
   op_token:
