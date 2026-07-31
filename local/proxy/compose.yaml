@@ -65,7 +65,7 @@ services:
       context: .
       dockerfile_inline: |
         # Stage 1: Build Caddy with custom modules using xcaddy
-        FROM caddy:2-builder AS builder
+        FROM caddy:builder AS builder
         # bouncer 2 https://app.crowdsec.net/hub/author/hslatman/remediation-components/caddy-crowdsec-bouncer
         RUN xcaddy build \
             --with github.com/caddy-dns/cloudflare \
@@ -79,7 +79,7 @@ services:
             --with github.com/fvbommel/caddy-dns-ip-range \
             --with github.com/fvbommel/caddy-combine-ip-ranges
         # Stage 2: Create the final lightweight image
-        FROM caddy:2
+        FROM caddy:latest
         # Copy the custom compiled binary from the builder stage
         COPY --from=builder /usr/bin/caddy /usr/bin/caddy
     restart: unless-stopped
