@@ -33,6 +33,7 @@ services:
     depends_on:
       locket: service_healthy
     entrypoint: ["/init.sh", "-f", "/run/secrets/temp.env"]
+    command: ["docker-entrypoint.sh"]
     #expose:
     #  - 8080
     ports:
