@@ -31,7 +31,8 @@ services:
     container_name: wiki
     user: 1000:1000
     depends_on:
-      locket: service_healthy
+      locket: 
+        condition: service_healthy
     entrypoint: ["/init.sh", "-f", "/run/secrets/temp.env"]
     command: ["docker-entrypoint.sh"]
     #expose:
