@@ -47,7 +47,7 @@ services:
       - ALLOW_STOP=1
       - ALLOW_RESTARTS=1
       # Optional: enable for terminal access
-      # - EXEC=1
+      - EXEC=1 # Needed for volume browsing and console
       - ALLOW_PAUSE=1
       - ALLOW_UNPAUSE=1
     volumes:
