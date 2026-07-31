@@ -22,7 +22,6 @@ services:
     volumes:
       # Mount in your actual secret templates, with secret references
       - ./config/wiki:/wiki:ro
-      #- ./config/crowdsec/secrets:crowdsec:ro
       # Mount in your output directory, where you want secrets materialized
       - secrets-store-wiki:/run/secrets/locket
 
@@ -34,7 +33,7 @@ services:
       locket: 
         condition: service_healthy
     entrypoint: ["/init.sh", "-f", "/run/secrets/temp.env"]
-    command: ["docker-entrypoint.sh"]
+    command: ["/docker-entrypoint.sh"]
     #expose:
     #  - 8080
     ports:
