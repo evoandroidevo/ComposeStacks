@@ -191,8 +191,8 @@ services:
     container_name: arr-dashboard
     restart: no
     environment:
-      - PUID=1000  # Set to your user ID (run `id -u` on host)
-      - PGID=1000  # Set to your group ID (run `id -g` on host)
+      - PUID=1000 # Set to your user ID (run `id -u` on host)
+      - PGID=1000 # Set to your group ID (run `id -g` on host)
     volumes:
       - arrstack-dashboard:/config
     expose:
@@ -201,88 +201,81 @@ services:
       - proxy
       - default
 
-  # qui:
-  #   image: ghcr.io/autobrr/qui:latest
-  #   depends_on:
-  #     qbittorrent:
-  #       condition: service_healthy
-  #     locket:
-  #       condition: service_completed_successfully
-  #   container_name: qui
-  #   restart: unless-stopped
-  #   expose:
-  #     - 7476
-  #   volumes:
-  #     - type: volume
-  #       source: qui-arrstack
-  #       target: /data
-  #     - type: volume
-  #       source: locket-arrstack
-  #       target: /config
-  #       volume:
-  #         subpath: qui
-  #   environment:
-  #     - PUID=1000
-  #     - PGID=1000
-  #     - TZ=America/Chicago
-  #     - QUI__HOST=0.0.0.0
-  #     - QUI__PORT=7476
-  #     - QUI__DATA_DIR=/data
-  #     - QUI__LOG_DIR=/data/logs
-  #     - QUI__LOG_LEVEL=info
-  #     - QUI__LOG_MAX_SIZE=10
-  #     - QUI__LOG_MAX_FILES=5
-  #   networks:
-  #     - default
-  #     - proxy
-
-  # autobrr:
-  #   image: autobrr/autobrr:latest
-  #   container_name: autobrr
-  #   user: "1000:1000"
-  #   environment:
-  #     - TZ=America/Chicago
-  #     - AUTOBRR__BASE_URL="/autobrr/"
-  #     - AUTOBRR__HOST=0.0.0.0
-  #   volumes:
-  #     - autobrr-arrstack:/config
-  #   expose:
-  #     - 7474
-  #   restart: unless-stopped
-  #   networks:
-  #     - default
-  #     - proxy
-
-  # TODO: investigate how profilarr handles config files, check if they can be added to the repo for no setup on first run
-  profilarr:
-    image: ghcr.io/dictionarry-hub/profilarr:latest
-    container_name: profilarr
-    user: "101000:101000"
-    restart: no
-    depends_on:
-      locket:
-        condition: service_healthy
-    environment:
-      #- PUID=101000
-      #- PGID=101000
-      - PORT=6869
-      - HOST=0.0.0.0
-      - UMASK=0022
-      - TZ=America/Chicago
-      - ORIGIN_FILE=/run/secrets/profilarr_origin # TODO: check if locket adds a trailing newline to the secret file, if so, we need to trim it before using it
-    volumes:
-      - profilarr-arrstack:/config
-      - type: volume
-        source: secrets-store-arrstack
-        target: /run/secrets/profilarr_origin
-        read_only: true
-        volume:
-          subpath: profilarr_origin
+  qui:
+    image: ghcr.io/autobrr/qui:latest
+    container_name: qui
+    restart: unless-stopped
     expose:
-      - 6869
+      - 7476
+    volumes:
+      - qui-arrstack:/data
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Chicago
+      - QUI__HOST=0.0.0.0
+      - QUI__PORT=7476
+      - QUI__DATA_DIR=/data
+      - QUI__LOG_DIR=/data/logs
+      - QUI__LOG_LEVEL=info
+      - QUI__LOG_MAX_SIZE=10
+      - QUI__LOG_MAX_FILES=5
+      - QUI__BASE_URL=/qui
+      - QUI__AUTH_DISABLED=true
+      - QUI__I_ACKNOWLEDGE_THIS_IS_A_BAD_IDEA=true
+      - QUI__AUTH_DISABLED_ALLOWED_CIDRS=127.0.0.1/32,192.168.1.0/24
     networks:
       - default
       - proxy
+
+  autobrr:
+    image: autobrr/autobrr:latest
+    container_name: autobrr
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Chicago
+      - AUTOBRR__BASE_URL=/autobrr
+      - AUTOBRR__HOST=0.0.0.0
+    volumes:
+      - autobrr-arrstack:/config
+    expose:
+      - 7474
+    networks:
+      - default
+      - proxy
+
+  # TODO: investigate how profilarr handles config files, check if they can be added to the repo for no setup on first run
+  # profilarr:
+  #   image: ghcr.io/dictionarry-hub/profilarr:latest
+  #   container_name: profilarr
+  #   user: "101000:101000"
+  #   restart: no
+  #   depends_on:
+  #     locket:
+  #       condition: service_healthy
+  #   environment:
+  #     #- PUID=101000
+  #     #- PGID=101000
+  #     - PORT=6869
+  #     - HOST=0.0.0.0
+  #     - UMASK=0022
+  #     - TZ=America/Chicago
+  #     - ORIGIN_FILE=/run/secrets/profilarr_origin # TODO: check if locket adds a trailing newline to the secret file, if so, we need to trim it before using it
+  #   volumes:
+  #     - profilarr-arrstack:/config
+  #     - type: volume
+  #       source: secrets-store-arrstack
+  #       target: /run/secrets/profilarr_origin
+  #       read_only: true
+  #       volume:
+  #         subpath: profilarr_origin
+  #   expose:
+  #     - 6869
+  #   networks:
+  #     - default
+  #     - proxy
 
   seerr:
     image: ghcr.io/seerr-team/seerr:latest
@@ -474,10 +467,10 @@ volumes:
     driver: local
   qbittorrent-arrstack:
     driver: local
-  # qui-arrstack:
-  #   driver: local
-  # autobrr-arrstack:
-  #   driver: local
+  qui-arrstack:
+    driver: local
+  autobrr-arrstack:
+    driver: local
   profilarr-arrstack:
     driver: local
   # scraparr-arrstack:

@@ -1,7 +1,0 @@
-corsAllowedOrigins = ""
-
-oidcEnabled = false
-oidcIssuerUrl = ""
-oidcClientId = ""
-oidcClientSecret = ""
-oidcDisableBuiltinLogin = false
