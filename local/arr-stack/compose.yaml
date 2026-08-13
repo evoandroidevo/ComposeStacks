@@ -229,7 +229,7 @@ services:
       - proxy
 
   autobrr:
-    image: autobrr/autobrr:latest
+    image: ghcr.io/autobrr/autobrr:latest
     container_name: autobrr
     restart: unless-stopped
     environment:
