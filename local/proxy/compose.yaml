@@ -106,12 +106,12 @@ services:
         source: parts-tracking_inventree_data
         target: /var/www/static
         volume:
-          subpath: data/static
+          subpath: static
       - type: volume
         source: parts-tracking_inventree_data
         target: /var/www/media
         volume:
-          subpath: data/media
+          subpath: media
     networks:
       - default
       - proxy
