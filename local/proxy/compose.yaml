@@ -103,12 +103,12 @@ services:
       - caddy_data:/data
       - caddy_config:/config
       - type: volume
-        source: inventree_data
+        source: parts-tracking_inventree_data
         target: /var/www/static
         volume:
           subpath: data/static
       - type: volume
-        source: inventree_data
+        source: parts-tracking_inventree_data
         target: /var/www/media
         volume:
           subpath: data/media
@@ -168,7 +168,7 @@ networks:
 volumes:
   caddy_data:
     driver: local
-  inventree_data:
+  parts-tracking_inventree_data:
     external: true
   caddy_config:
     driver: local
