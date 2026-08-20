@@ -102,6 +102,16 @@ services:
           subpath: caddy
       - caddy_data:/data
       - caddy_config:/config
+      - type: volume
+        source: inventree_data
+        target: /var/www/static
+        volume:
+          subpath: data/static
+      - type: volume
+        source: inventree_data
+        target: /var/www/media
+        volume:
+          subpath: data/media
     networks:
       - default
       - proxy
@@ -158,6 +168,8 @@ networks:
 volumes:
   caddy_data:
     driver: local
+  inventree_data:
+    external: true
   caddy_config:
     driver: local
   # crowdsec-db:
