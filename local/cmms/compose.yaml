@@ -1,4 +1,3 @@
-name: atlas-cmms
 services:
   postgres:
     image: postgres:16-alpine
@@ -19,8 +18,8 @@ services:
       - postgres
       - minio
     volumes:
-      - ./logo:/app/static/images
-      - ./config:/app/static/config
+      - api-data-images:/app/static/images
+      - api-data-config:/app/static/config
     environment:
       DB_URL: postgres/atlas
       DB_USER: ${POSTGRES_USER}
@@ -145,4 +144,10 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
   minio_data:
+    driver: local
+  api-data-images:
+    driver: local
+  api-data-config:
+    driver: local
