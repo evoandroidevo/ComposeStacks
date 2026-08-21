@@ -140,8 +140,8 @@ services:
       - minio
     volumes:
       - ./config/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    expose:
-      - 80
+    ports:
+      - "9130:80"
 
 volumes:
   postgres_data:
