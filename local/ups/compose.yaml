@@ -30,9 +30,11 @@ services:
       start_period: 15s
       retries: 3
     networks:
+      - default
       - proxy
 
 networks:
+  default: {}
   proxy:
     external: true
 
