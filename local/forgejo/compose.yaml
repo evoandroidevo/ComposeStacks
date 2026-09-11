@@ -99,7 +99,7 @@ volumes:
       device: ":/mnt/thehub/Data/Code/forgjo-data"
   forgejo-db-data:
     driver: local
-  secrets-store-auth:
+  secrets-store-forgejo:
     driver: local
     driver_opts:
       type: tmpfs
