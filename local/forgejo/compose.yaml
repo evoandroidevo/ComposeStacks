@@ -62,6 +62,9 @@ services:
   forgejo-db:
     image: postgres:14
     container_name: forgejo-db
+    depends_on:
+      locket: 
+        condition: service_healthy
     entrypoint: ["/init.sh", "-f", "/config/.env"] # works
     command: ["docker-entrypoint.sh", "postgres"] # get error about this script not found?
     expose:
