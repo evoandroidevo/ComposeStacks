@@ -57,7 +57,7 @@ services:
     expose:
       - 3000
     depends_on:
-      - db
+      - forgejo-db
 
   forgejo-db:
     image: postgres:14
