@@ -1,0 +1,107 @@
+services:
+  locket:
+    image: ghcr.io/bpbradley/locket:op
+    # OP complains about file permissions if it doesnt have 65532 user or group. TODO: https://github.com/bpbradley/locket/issues/89
+    user: "65532:101000"
+    container_name: locket-dockhand
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    command:
+      # Park is needed otherwise when the continer exits it will remove the files creates in the tmpfs volume
+      - "--mode=park"
+      - "--inject-failure-policy=error"
+      - "--log-level=info"
+      # -rw-r----- file mode
+      - "--file-mode=0640"
+      - "--dir-mode=0740"
+      - "--op-token=file:/run/secrets/op_token"
+      - "--map=/postgres:/run/secrets/locket/postgres"
+      - "--secret=database_user={{ op://DockerSecrets/forgejo-gitServer/database_user }}"
+      - "--secret=database_user_password={{ op://DockerSecrets/forgejo-gitServer/database_user_password }}"
+      - "--secret=database_name={{ op://DockerSecrets/forgejo-gitServer/database_name }}"
+      # --secret=file name=file contents
+    secrets:
+      - op_token
+    volumes:
+      - secrets-store-forgejo:/run/secrets/locket
+      - - ./config/postgres:/postgres:ro
+
+  forgejo:
+    image: codeberg.org/forgejo/forgejo:16-rootless
+    container_name: forgejo
+    user: 101000:101000
+    environment:
+      - USER_UID=101000
+      - USER_GID=101000
+      - FORGEJO__database__DB_TYPE=postgres
+      - FORGEJO__database__HOST=db:5432
+      - FORGEJO__database__NAME__FILE=/config/database_name
+      - FORGEJO__database__USER__FILE=/config/database_user
+      - FORGEJO__database__PASSWD__FILE=/config/database_user_password
+    volumes:
+      - type: volume
+        source: nas-data
+        target: /var/lib/gitea
+      - /etc/localtime:/etc/localtime:ro
+      - type: volume
+        source: secrets-store-forgejo
+        target: /config
+        read_only: true
+    networks:
+      - default
+      - proxy
+    ports:
+      - "2222:2222"
+    expose:
+      - 3000
+    depends_on:
+      - db
+
+  forgejo-db:
+    image: postgres:14
+    container_name: forgejo-db
+    entrypoint: ["/init.sh", "-f", "/config/.env"] # works
+    command: ["docker-entrypoint.sh", "postgres"] # get error about this script not found?
+    expose:
+      - 5432
+    volumes:
+      - type: bind
+        source: ./init/init.sh
+        target: /init.sh
+        read_only: true
+      - type: volume
+        source: secrets-store-forgejo
+        target: /config
+        read_only: true
+        volume:
+          subpath: postgres
+      - type: volume
+        source: forgejo-db-data
+        target: /var/lib/postgresql
+
+networks:
+  default: {}
+  proxy:
+    external: true
+
+secrets:
+  op_token:
+    file: /etc/op/token
+
+volumes:
+  nas-data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: "addr=192.168.1.21,rw,sync,all-squash,nfsvers=4,nolock,hard,anonuid=101000,anongid=101000"
+      device: ":/mnt/thehub/Data/Code/forgjo-data"
+  forgejo-db-data:
+    driver: local
+  secrets-store-auth:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: uid=65532,gid=1000,mode=740
