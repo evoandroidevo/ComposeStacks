@@ -3,7 +3,7 @@ services:
     image: ghcr.io/bpbradley/locket:op
     # OP complains about file permissions if it doesnt have 65532 user or group. TODO: https://github.com/bpbradley/locket/issues/89
     user: "65532:101000"
-    container_name: locket-dockhand
+    container_name: locket-forgejo
     security_opt:
       - no-new-privileges:true
     cap_drop:
