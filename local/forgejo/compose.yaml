@@ -98,7 +98,7 @@ volumes:
     driver: local
     driver_opts:
       type: nfs
-      o: "addr=192.168.1.21,rw,sync,all-squash,nfsvers=4,nolock,hard,anonuid=101000,anongid=101000"
+      o: "addr=192.168.1.21,rw,sync,nfsvers=4,nolock,hard"
       device: ":/mnt/thehub/Data/Code/forgjo-data"
   forgejo-db-data:
     driver: local
