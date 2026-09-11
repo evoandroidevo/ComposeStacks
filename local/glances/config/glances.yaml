@@ -1,0 +1,137 @@
+pages:
+  - name: Home
+    # Optionally, if you only have a single page you can hide the desktop navigation for a cleaner look
+    # hide-desktop-navigation: true
+    columns:
+      - size: small
+        widgets:
+          - type: calendar
+            first-day-of-week: sunday
+
+          - type: rss
+            limit: 10
+            collapse-after: 3
+            cache: 12h
+            feeds:
+              - url: https://selfh.st/rss/
+                title: selfh.st
+
+
+
+      - size: full
+        widgets:
+          - type: group
+            widgets:
+              - type: hacker-news
+              - type: lobsters
+
+          - type: videos
+            channels:
+              - UCXuqSBlHAE6Xw-yeJA0Tunw # Linus Tech Tips
+              - UCR-DXc1voovS8nhAvccRZhg # Jeff Geerling
+              - UCHnyfMqiRRG1u-2MsSQLbXA # Veritasium
+              - UCMOqf8ab-42UUQIdVoKwjlQ # Pratical Engienering
+              - UCFtc3XdXgLFwhlDajMGK69w # NightHawkInLight
+              - UCy0tKL1T7wFoYcxCe0xjN6Q # Technology Connections
+              - UCmEmX_jw_pRp5UbAdzkZq-g # Posy
+              - UCFhXFikryT4aFcLkLw2LBLA # Nilered
+              - UCZem9C5rWjSb0B8tV3k2EZg # Torque Test Channel
+              - UCEIwxahdLz7bap-VDs9h35A # Steve Mould
+              - UCu6mSoMNzHQiBIOCkHUa2Aw # CodysLab
+              - UC6107grRI4m0o2-emgoDnAA # Smartereveryday
+              - UCj1VqrHhDte54oLgPG4xpuQ # Stuff Made Here
+              - UCgCezP1ThHMANeuHtnf1Euw # Ardens
+              - UCRcgy6GzDeccI7dkbbBna3Q # LEMMiNO
+
+          - type: group
+            widgets:
+              - type: reddit
+                subreddit: technology
+                show-thumbnails: true
+              - type: reddit
+                subreddit: selfhosted
+                show-thumbnails: true
+
+      - size: small
+        widgets:
+          - type: weather
+            location: Dallas, United States
+            units: imperial # alternatively "imperial"
+            hour-format: 12h # alternatively "24h"
+            # Optionally hide the location from being displayed in the widget
+            # hide-location: true
+
+          - type: releases
+            cache: 1d
+            # Without authentication the Github API allows for up to 60 requests per hour. You can create a
+            # read-only token from your Github account settings and use it here to increase the limit.
+            # token: ...
+            repositories:
+              - glanceapp/glance
+              - jellyfin/jellyfin
+              - dockerhub:Finsys/dockhand
+
+
+  - name: Startpage
+    width: slim
+    hide-desktop-navigation: true
+    center-vertically: true
+    columns:
+      - size: full
+        widgets:
+          - type: search
+            autofocus: true
+          - type: monitor
+            cache: 1m
+            title: Services
+            sites:
+              - title: Jellyfin
+                url: https://yourdomain.com/
+                icon: si:jellyfin
+              - title: Gitea
+                url: https://yourdomain.com/
+                icon: si:gitea
+              - title: qBittorrent # only for Linux ISOs, of course
+                url: https://yourdomain.com/
+                icon: si:qbittorrent
+              - title: Immich
+                url: https://yourdomain.com/
+                icon: si:immich
+              - title: AdGuard Home
+                url: https://yourdomain.com/
+                icon: si:adguard
+              - title: Vaultwarden
+                url: https://yourdomain.com/
+                icon: si:vaultwarden
+
+          - type: bookmarks
+            groups:
+              - title: General
+                links:
+                  - title: Gmail
+                    url: https://mail.google.com/mail/u/0/
+                  - title: Amazon
+                    url: https://www.amazon.com/
+                  - title: Github
+                    url: https://github.com/
+              - title: Entertainment
+                links:
+                  - title: YouTube
+                    url: https://www.youtube.com/
+                  - title: Prime Video
+              - title: Social
+                links:
+                  - title: Reddit
+                    url: https://www.reddit.com/
+                  - title: Twitter
+                    url: https://twitter.com/
+                  - title: Instagram
+                    url: https://www.instagram.com/
+
+  #     - size: full
+  #       widgets:
+  #         # Add widgets here
+
+  #     - size: small
+  #       widgets:
+  #         # Add widgets here
