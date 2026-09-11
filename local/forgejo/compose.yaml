@@ -26,7 +26,7 @@ services:
       - op_token
     volumes:
       - secrets-store-forgejo:/run/secrets/locket
-      - - ./config/postgres:/postgres:ro
+      - ./config/postgres:/postgres:ro
 
   forgejo:
     image: codeberg.org/forgejo/forgejo:16-rootless
