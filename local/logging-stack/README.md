@@ -2,13 +2,15 @@
 
 This stack provides a lightweight observability environment for logs and metrics using Grafana, VictoriaLogs, VictoriaMetrics, vmauth, vmalert, and Alertmanager. It is intended to collect, store, and visualize operational data for the local services in this repository.
 
+Status: current production, as confirmed on 2026-09-19. Administrative web access should require Caddy/Authelia. The configuration grants anonymous Grafana users the Admin role, so access-control enforcement must be verified at the proxy and network boundary.
+
 ## What this stack provides
 
 - Grafana for dashboards and log/metric exploration
 - VictoriaLogs for storing and querying logs
 - VictoriaMetrics for storing and querying metrics
 - vmauth as a routing layer between Grafana and the Victoria products
-- vmalert and Alertmanager for alert evaluation and delivery
+- vmalert and Alertmanager for alert evaluation and routing; notification delivery is not configured
 - locket for injecting runtime secrets from 1Password
 
 ## Services
@@ -26,7 +28,7 @@ This stack provides a lightweight observability environment for logs and metrics
 - Docker and Docker Compose installed
 - An 1Password token file available at /etc/op/token
 - Configuration files present under ./config/
-- External Docker networks named proxy and logging-network
+- An external Docker network named `proxy`; internal services use the project's default network
 - Valid secret values for Grafana domain settings in your 1Password store
 
 ## Directory layout
@@ -60,6 +62,8 @@ docker compose ps
 
 Once the stack is running, Grafana is available through the reverse proxy network as configured by the stack's environment and secret files. If your setup exposes it directly, it is typically served on the host's configured reverse proxy route rather than a standalone host port.
 
+Grafana and vmauth have container-only exposed ports, while VictoriaLogs publishes host port 9428. [TODO] Verify the rendered proxy routes and host firewall restrictions; Compose network membership alone does not demonstrate authentication.
+
 ## Data and persistence
 
 - Grafana data is stored in the grafanadata volume
@@ -73,6 +77,7 @@ Once the stack is running, Grafana is available through the reverse proxy networ
 - Grafana connects to these backends using the provisioned datasource configuration
 - vmauth routes requests between the Victoria backends for alerting and querying
 - vmalert evaluates rules and sends alerts to Alertmanager
+- Alertmanager currently routes everything to a `blackhole` receiver with no notification destination. [TODO] Configure and test the intended delivery channel.
 
 ## Useful maintenance commands
 
@@ -94,3 +99,4 @@ docker compose down
 - Secret values such as Grafana domain settings are loaded from the temporary secret store at runtime.
 - The stack depends on the external proxy Docker network.
 - The Docker and Jellyfin setup directories provide additional log shipping options for sending data into VictoriaLogs.
+- VictoriaMetrics currently scrapes itself, VictoriaLogs, and vmalert every 10 seconds. This does not establish monitoring coverage of every stack.
