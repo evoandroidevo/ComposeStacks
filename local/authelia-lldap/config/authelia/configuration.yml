@@ -168,16 +168,6 @@ identity_providers:
     hmac_secret: '{{ op://DockerSecrets/authelia-lldap/identity_providers-oidc-hmac_secret }}'
     jwks:
       - key: {{ secret "/config/key.key" | mindent 10 "|" | msquote }}
-      - certificate_chain: |
-          -----BEGIN PUBLIC KEY-----
-          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAs2hFya0c65ss6LCKtGkP
-          9C+BbIsMuf9UZyEHWvn1YM76gwdWfP9RcrhpwMxbbm92Y3KpkogmwJYNI0DsmSAp
-          TI+Fi+//cLnedsszFM01tsowwuVqJipO/KeMovcETBdwbMZrjZVNqx6YmtuC43Yl
-          wTDHy3++vd2Zm6fqBMeqBxup14h/GhOZyyrZ9wHExKtYiCtpT4V+SA+aCbqyQKN7
-          i0NFya5VegzYJB9Q3bnawySikXxXVNs0GNyhp5Ya/lomaMVvhZEVILUGU414MD2g
-          pSw4t5M1zInuB3NZqeTrIcUqu3rs4S7Rvi0ndH+5R+cKCYWz5Tu9zWHmJ9wEcKI5
-          SwIDAQAB
-          -----END PUBLIC KEY-----
     lifespans:
       access_token: '1h'
       authorize_code: '1m'
