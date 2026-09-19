@@ -34,10 +34,8 @@ services:
         condition: service_healthy
     entrypoint: ["/init.sh", "-f", "/run/secrets/temp.env"]
     command: ["/docker-entrypoint.sh"]
-    #expose:
-    #  - 8080
-    ports:
-      - 8080:8080
+    expose:
+      - 8080
     environment:
       - LEAFWIKI_HOST=0.0.0.0
       - LEAFWIKI_PORT=8080
