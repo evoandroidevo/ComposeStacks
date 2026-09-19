@@ -7,7 +7,7 @@ services:
       - ./config:/app/config
     expose:
       - 8080
-    network:
+    networks:
       - proxy
 networks:
   proxy:
