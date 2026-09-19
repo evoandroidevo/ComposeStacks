@@ -9,7 +9,9 @@ services:
       - 8080
     networks:
       - proxy
+      - default
 networks:
   proxy:
     external: true
+  default: {}
       
