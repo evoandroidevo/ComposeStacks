@@ -2,10 +2,12 @@
 
 This stack runs a reverse proxy with Caddy, a Cloudflare Tunnel entrypoint, and a secret injection helper for runtime configuration. It is designed to sit in front of other local services and expose them through a single ingress layer.
 
+Status: current production, as confirmed on 2026-09-19. Administrative web access should require Caddy/Authelia; rendered route coverage has not been verified during this documentation refresh.
+
 ## What this stack provides
 
 - Caddy as the main reverse proxy and TLS terminator
-- Cloudflare Tunnel integration so services can be exposed securely without exposing direct ports to the internet
+- Cloudflare Tunnel integration alongside directly published Caddy ports; actual internet exposure depends on host firewall and upstream routing
 - Runtime secret injection through locket, using values from 1Password
 - Custom Caddy modules for Cloudflare DNS, trapdoor, layer 4 handling, and other extensions
 
@@ -20,7 +22,8 @@ This stack runs a reverse proxy with Caddy, a Cloudflare Tunnel entrypoint, and 
 - Docker and Docker Compose installed
 - An 1Password token file available at /etc/op/token
 - Secret templates present under ./config/caddy
-- External Docker networks named proxy and logging-network
+- External Docker network `proxy`; `logging-network` is also declared but is not attached to any active service
+- External Docker volume `parts-tracking_inventree_data`, with the `static` and `media` subpaths mounted by Caddy
 - A valid Cloudflare Tunnel token available in 1Password under the configured secret reference
 
 ## Directory layout
@@ -47,7 +50,7 @@ To inspect the status of a specific service:
 
 ```bash
 docker compose ps
-``` 
+```
 
 ## Rebuild the custom Caddy image
 
@@ -70,6 +73,7 @@ The locket service reads the 1Password token from /etc/op/token and injects runt
 ## Notes
 
 - The Caddy container is built from a custom image with additional modules for Cloudflare, trapdoor, and other integrations.
-- The tunnel token is mounted from a temporary secret store at runtime, so it is not stored directly in the compose file or ever touches the disk.
+- The tunnel token is mounted from a tmpfs-backed secret store; the Compose file contains a 1Password reference, not the token value. Host swap/dump handling and other runtime persistence have not been audited.
 - The proxy is intended to sit in front of other services and is connected to the external proxy network.
-- The stack also attaches to the logging-network so it can participate in the broader observability environment if needed.
+- No active service attaches to `logging-network`. The CrowdSec service block is commented out, even though CrowdSec modules are included in the Caddy build.
+- The cloudflared healthcheck runs `cloudflared --version`; it does not verify a live tunnel connection.

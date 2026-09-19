@@ -1,12 +1,12 @@
 # Authelia + LLDAP
 
-This stack provides a self-contained authentication and identity management environment for local development and small deployments. It runs Authelia as the primary authentication provider, a lightweight LLDAP directory for storing users and groups, PostgreSQL as Authelia's backing store, and Redis for session/cache support. Secrets are injected at runtime via `locket` so sensitive values are not persisted in the repository.
+This is a current production stack, as confirmed on 2026-09-19. It runs Authelia as the authentication provider, LLDAP for users and groups, PostgreSQL as Authelia's backing store, and Redis for session/cache support. Locket renders runtime configuration from 1Password references. This documentation review did not audit secret-bearing file contents or certify that the repository contains no credentials.
 
 ## Services
 
 - `locket`: materializes secret templates from 1Password into a tmpfs-backed secret store
 - `authelia-db`: PostgreSQL database used by Authelia for configuration and state
-- `llldap`: lightweight LDAP server for users and groups consumed by Authelia
+- `lldap`: lightweight LDAP server for users and groups consumed by Authelia
 - `authelia`: the authentication server (2FA, OIDC, reverse-proxy compatible)
 - `redis`: in-memory cache for sessions and rate-limiting
 
@@ -52,7 +52,7 @@ docker compose restart authelia
 ## Secrets workflow
 
 - `locket` reads `/etc/op/token` to authenticate to 1Password and renders templates from `./config` into the tmpfs-backed `secrets-store-*` volume.
-- Secrets are mounted read-only into containers; they are not committed to this repository.
+- PostgreSQL and LLDAP mount their generated configuration read-only. Authelia's configuration mount is writable, and Locket currently uses `0777` file/directory modes. See [permission concerns](../../docs/codebase/CONCERNS.md#L1).
 - To update a secret, update the template in `./config` and restart `locket` (or the stack) so it can materialize the new values.
 
 ## Reverse proxy integration
@@ -63,11 +63,12 @@ docker compose restart authelia
 ## LDAP provisioning
 
 - The LLDAP service provides a lightweight LDAP directory for Authelia to query users and groups.
-- If you need to add users, update the LLDAP template under `./config/lldap` (if present) or the appropriate provisioning file and restart the stack to apply changes.
+- [TODO] Document the operational user/group provisioning process. Do not assume that changing a service configuration template and restarting the stack provisions directory users.
 
 ## Backups and persistence
 
 - PostgreSQL data is persisted to a Docker volume declared in the compose file. Backups can be performed by running `pg_dump` inside the `authelia-db` container or mounting the volume to a helper container.
+- LLDAP uses its own SQLite database at `/data/users.db` in the `lldap-git` volume; an Authelia PostgreSQL dump does not include that directory state. Restore procedures have not been verified in this refresh.
 
 Example backup command:
 
