@@ -41,10 +41,13 @@ services:
     environment:
       - LEAFWIKI_HOST=0.0.0.0
       - LEAFWIKI_PORT=8080
-      - LEAFWIKI_ALLOW_INSECURE=true  # Required for plain HTTP. Omit for HTTPS (ensure `X-Forwarded-Proto: https` is forwarded).
-      - LEAFWIKI_DISABLE_AUTH=false # Enabled for testing
+      - LEAFWIKI_ALLOW_INSECURE=false  # Required for plain HTTP. Omit for HTTPS (ensure `X-Forwarded-Proto: https` is forwarded).
+      - LEAFWIKI_PUBLIC_ACCESS=true
       - LEAFWIKI_LOG_FORMAT=json
       - LEAFWIKI_DATA_DIR=/app/data
+      - LEAFWIKI_GIT_BACKUP=true
+      - LEAFWIKI_GIT_BACKUP_AUTHOR_NAME=leafwiki
+      - LEAFWIKI_GIT_BACKUP_REMOTE=https://github.com/evoandroidevo/wiki.git
     volumes:
       - ./init/init.sh:/init.sh:ro
       - leafwiki-data:/app/data
