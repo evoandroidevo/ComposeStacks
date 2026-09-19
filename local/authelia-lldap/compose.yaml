@@ -50,7 +50,7 @@ services:
     restart: unless-stopped
     volumes:
       - type: bind
-        source: ../../common/scripts/init.sh
+        source: ./init/init.sh
         target: /init.sh
         read_only: true
       - type: volume
