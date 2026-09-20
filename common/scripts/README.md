@@ -52,7 +52,7 @@ services:
     command: ["/usr/local/bin/start-app"] # check the app's dockerfile ENTRYPOINT and CMD that you are using this init.sh script with to configure the command, if only ENTRYPOINT is used in
     # the dockerfile copy it to command: in the compose file, if ENTRYPOINT and CMD are populated then combine them as an example here is how i have combined postgres's ENTRYPOINT 
     # ["docker-entrypoint.sh"] and CMD ["postgres"] to command: ["docker-entrypoint.sh", "postgres"]
-    depends_op:
+    depends_on:
       locket:
         condition: service_healthy # Locket becomes healthy when all secrets have been injected into the files is has been configured for.
     user: 1000:1000
@@ -68,7 +68,6 @@ volumes:
   secrets-store-example:
     driver: local
     driver_opts:
-      driver_opts:
       type: tmpfs
       device: tmpfs
       o: uid=65532,gid=1000,mode=740 # Since example-app container is configured to start as user: 1000:1000 we set the group to gid 1000 so the init script can read it with our set permissions of -rwxr----- or can use 744 for -rwxr--r-- for global read access
@@ -82,6 +81,7 @@ secrets:
 - The script uses POSIX `sh`, so it is compatible with minimal container images.
 - If no command is provided after the env file, the script exits successfully after loading the environment.
 - The script expects one variable per line in the form `KEY=VALUE`.
+- Values are exported literally; this is not a shell-expanding dotenv parser. Malformed lines are printed in warnings, so avoid placing sensitive data in invalid lines.
 
 ### Example env file
 
