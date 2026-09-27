@@ -81,7 +81,7 @@ sinks:
     type: http
     inputs:
       - parse_jellyfin
-    uri: https://logs.<domain>.<tld>/insert/jsonline?_stream_fields=app,env,host,source,filename
+    uri: https://vectoruser:password@logs.<domain>.<tld>/?_stream_fields=app,env,host,source,filename
     encoding:
       codec: json # Use standard json codec
     framing:
