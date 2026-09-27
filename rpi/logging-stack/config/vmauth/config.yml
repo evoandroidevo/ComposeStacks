@@ -12,14 +12,14 @@ unauthorized_user:
     - src_paths: ["/.*"]
       url_prefix: http://victorialogs:9428/select/vmui
 users:
-  - username: "op://DockerSecrets/logging-stack/docker_user"
-    password: "op://DockerSecrets/logging-stack/docker_password"
+  - username: {{ "op://DockerSecrets/logging-stack/docker_user" }}
+    password: {{ "op://DockerSecrets/logging-stack/docker_password" }}
     url_map:
       - src_path: ["/.*"]
         drop_src_path_prefix_parts: 1
         url_prefix: http://victorialogs:9428/insert/loki/api/v1/push
-  - username: "op://DockerSecrets/logging-stack/vector_user"
-    password: "op://DockerSecrets/logging-stack/vector_password"
+  - username: {{ "op://DockerSecrets/logging-stack/vector_user" }}
+    password: {{ "op://DockerSecrets/logging-stack/vector_password" }}
     url_map:
       - src_path: ["/.*"]
         drop_src_path_prefix_parts: 1
