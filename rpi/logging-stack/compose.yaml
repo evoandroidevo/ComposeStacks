@@ -39,6 +39,7 @@ services:
         condition: service_started
       victoriametrics:
         condition: service_started
+    user: 1000:1000
     expose:
       - 3000
     volumes:
