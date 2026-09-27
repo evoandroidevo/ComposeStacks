@@ -1,0 +1,119 @@
+  networks:
+    - name: 'internal'
+      networks: '192.168.1.0/24'
+    - name: 'VPN'
+      networks: '192.168.6.0/24'
+    - name: 'docker'
+      networks: '172.16.0.0/12'
+
+  rules:
+      # Rules applied to everyone
+    - domain:
+        - "jelly.dyslexicevo.dev"
+        - "auth.dyslexicevo.dev"
+      policy: bypass
+
+    - domain:
+        - "*.dyslexicevo.dev"
+      policy: 'bypass'
+      networks: 'docker'
+
+    - domain:
+        - "box.dyslexicevo.dev"
+      policy: 'bypass'
+      networks:
+        - 'internal'
+        - '10.10.15.2/32'
+      resources:
+        - '^/sonarr/api/v3/calendar(\?.*)?$'
+        - '^/radarr/api/v3/calendar(\?.*)?$'
+        - '^/qbit/api(/.*)?$'
+
+    - domain:
+        - "pve.dyslexicevo.dev"
+        - "panel.dyslexicevo.dev"
+        - "unifi.dyslexicevo.dev"
+        - "cdn.dyslexicevo.dev"
+        - "user.dyslexicevo.dev"
+        - "irc.dyslexicevo.dev"
+        - "cam.dyslexicevo.dev"
+        - "admin.dyslexicevo.dev"
+        - "request.dyslexicevo.dev"
+        - "wiki.dyslexicevo.dev"
+        - "git.dyslexicevo.dev"
+      policy: 'bypass'
+      networks:
+        - 'internal'
+        - 'VPN'
+
+    - domain:
+        - "logs.dyslexicevo.dev"
+        - "box.dyslexicevo.dev"
+      policy: 'bypass'
+      networks:
+        - '192.168.1.100/32'
+        - '192.168.6.2/32'
+        - '192.168.1.102/32'
+        - '192.168.1.242/32'
+
+    - domain:
+        - "logs.dyslexicevo.dev"
+        - "box.dyslexicevo.dev"
+      policy: one_factor
+      networks:
+        - 'internal'
+        - 'VPN'
+      subject:
+        - ['group:admins']
+
+    - domain:
+        - "request.dyslexicevo.dev"
+      policy: one_factor
+      subject:
+        - ['group:jelly']
+
+    - domain:
+        - "panel.dyslexicevo.dev"
+      policy: one_factor
+      subject:
+        - ['group:panel']
+        - ['group:dev']
+
+    - domain:
+        - "cdn.dyslexicevo.dev"
+        - "wiki.dyslexicevo.dev"
+      policy: one_factor
+      subject:
+        - ['group:user']
+        - ['group:panel']
+        - ['group:dev']
+        - ['group:admins']
+
+    - domain:
+        - "user.dyslexicevo.dev"
+      policy: two_factor
+      subject:
+        - ['group:user']
+        - ['group:panel']
+        - ['group:dev']
+        - ['group:admins']
+
+    - domain:
+        - "pve.dyslexicevo.dev"
+        - "unifi.dyslexicevo.dev"
+        - "cam.dyslexicevo.dev"
+        - "git.dyslexicevo.dev"
+      policy: two_factor
+      subject:
+        - ['group:dev']
+        - ['group:admins']
+
+    - domain:
+        - "irc.dyslexicevo.dev"
+        - "admin.dyslexicevo.dev"
+        - "logs.dyslexicevo.dev"
+        - "box.dyslexicevo.dev"
+        - "request.dyslexicevo.dev"
+      policy: two_factor
+      subject:
+        - ['group:admins']

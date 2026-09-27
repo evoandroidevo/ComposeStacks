@@ -1,0 +1,360 @@
+{
+	admin off
+	servers {
+		client_ip_headers CF-Connecting-IP X-Forwarded-For
+		trusted_proxies combine {
+			cloudflare {
+				interval 12h
+				timeout 30s
+			}
+			dns cloudflare-tunnel {
+				interval 1m
+			}
+		}
+	}
+	log default {
+		output stdout
+		format json {
+			message_key _msg
+		}
+	}
+	layer4 {
+		:3890 {
+			@jelly remote_ip 192.168.1.19
+			route @jelly {
+				proxy lldap:3890
+			}
+			route {
+				close
+			}
+		}
+	}
+}
+
+
+(trapdoor_snippet) {
+	trapdoor {
+		action 418 # return code to the requests that is banned
+		duration 72h # how long the ban is for
+		expunger_interval 1m # how often is it run to search for matches
+		# Paths that will match and ban client
+		match {
+			path /.aws/config
+			path /.aws/credentials
+			path /.env
+			path /.env.*
+			path /.npmrc
+			path /.git/config
+			path /.idea/workspace.xml
+			path /.vscode/settings.json
+			path /wp-admin/*
+			path /wp-content/*
+			path /*.php
+			path /cgi-bin/*
+			path /wp-includes/
+			path /.cursor/*
+			path /.anthropic/*
+			path /.openai/*
+			path /.openclaw/*
+			path /.docker/*
+			path /.kube/*
+			path /google-credentials.json
+			path /service-account.json
+			path /serviceAccountKey.json
+			path /credentials.json
+			path /firebase-adminsdk.json
+			path /secrets.json
+			path /config.json
+			path /appsettings.json
+			path /key.json
+			path /keyfile.json
+		}
+	}
+}
+
+(parts-cors-headers) {
+	header Allow GET,HEAD,OPTIONS
+	header Access-Control-Allow-Origin *
+	header Access-Control-Allow-Methods GET,HEAD,OPTIONS
+	header Access-Control-Allow-Headers Authorization,Content-Type,User-Agent,traceparent
+
+	@cors_preflight{args[0]} method OPTIONS
+
+	handle @cors_preflight{args[0]} {
+		respond "" 204
+	}
+}
+
+*.dyslexicevo.dev {
+	log access {
+		output stdout
+		format transform `\{"_msg":"{request>method} {request>host} status={status} client={request>client_ip}", "level":"access", "client":"{request>client_ip}", "hostname":"{request>host}", "uri":"{request>uri}", "status":"{status}"}`
+	}
+	tls {
+		dns cloudflare 9UURiy7Vm8hpY58fSSelnCkRCO1fXLzWQ6LnKals
+		resolvers 1.1.1.1
+	}
+	@auth host auth.dyslexicevo.dev
+	@user host user.dyslexicevo.dev
+	@pve host pve.dyslexicevo.dev
+	@ups host ups.dyslexicevo.dev
+	@jelly host jelly.dyslexicevo.dev
+	@oldbox host oldbox.dyslexicevo.dev
+	@cam host cam.dyslexicevo.dev
+	@cdn host cdn.dyslexicevo.dev
+	@unifi host unifi.dyslexicevo.dev
+	@request host request.dyslexicevo.dev
+	@admin host admin.dyslexicevo.dev
+	@logs host logs.dyslexicevo.dev
+	@box host box.dyslexicevo.dev
+	@atlas host atlas.dyslexicevo.dev
+	@wiki host wiki.dyslexicevo.dev
+	@git host git.dyslexicevo.dev
+	@ha host ha.dyslexicevo.dev
+
+	handle @auth {
+		import trapdoor_snippet
+		reverse_proxy authelia:9091 {
+			header_up X-Forwarded-For {client_ip}
+		}
+	}
+	handle @user {
+		import trapdoor_snippet
+		forward_auth authelia:9091 {
+			uri /api/authz/forward-auth
+			copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
+			header_up X-Forwarded-For {client_ip}
+		}
+		reverse_proxy http://lldap:17170 {
+			header_up X-Forwarded-For {client_ip}
+		}
+	}
+	handle @pve {
+		import trapdoor_snippet
+		forward_auth authelia:9091 {
+			uri /api/authz/forward-auth
+			# The following commented line is for configuring the Authelia URL in the proxy. We strongly suggest
+			# this is configured in the Session Cookies section of the Authelia configuration.
+			# uri /api/authz/forward-auth?authelia_url=https://auth.example.com/
+			copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
+		}
+		reverse_proxy https://192.168.1.45:8006 {
+			transport http {
+				tls_insecure_skip_verify
+			}
+			header_up X-Forwarded-For {client_ip}
+		}
+	}
+	handle @ups {
+		import trapdoor_snippet
+		forward_auth authelia:9091 {
+			uri /api/authz/forward-auth
+			copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
+		}
+		reverse_proxy http://pve-ups:8080 {
+			header_up X-Forwarded-For {client_ip}
+		}
+	}
+	handle @jelly {
+		import trapdoor_snippet
+		reverse_proxy 192.168.1.19:8096 {
+			header_up X-Forwarded-For {client_ip}
+		}
+	}
+	handle @oldbox {
+		import trapdoor_snippet
+		forward_auth authelia:9091 {
+			uri /api/authz/forward-auth
+			copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
+		}
+		reverse_proxy https://10.10.15.2:443 {
+			header_up X-Forwarded-For {client_ip}
+			transport http {
+				tls_insecure_skip_verify
+			}
+		}
+	}
+	handle @cam {
+		import trapdoor_snippet
+		forward_auth authelia:9091 {
+			uri /api/authz/forward-auth
+			copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
+		}
+		reverse_proxy https://192.168.1.35:443 {
+			header_up X-Forwarded-For {client_ip}
+			transport http {
+				tls_insecure_skip_verify
+			}
+		}
+	}
+	handle @cdn {
+		import trapdoor_snippet
+		forward_auth authelia:9091 {
+			uri /api/authz/forward-auth
+			copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
+		}
+		reverse_proxy 192.168.1.9:80 {
+			header_up X-Forwarded-For {client_ip}
+		}
+	}
+	handle @unifi {
+		import trapdoor_snippet
+		forward_auth authelia:9091 {
+			uri /api/authz/forward-auth
+			copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
+		}
+		reverse_proxy https://192.168.1.1 {
+			header_up X-Forwarded-For {client_ip}
+			transport http {
+				tls_insecure_skip_verify
+			}
+		}
+	}
+	handle @request {
+		import trapdoor_snippet
+		forward_auth authelia:9091 {
+			uri /api/authz/forward-auth
+			copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
+		}
+		reverse_proxy http://seerr:5055 {
+			header_up X-Forwarded-For {client_ip}
+		}
+	}
+	handle @admin {
+		import trapdoor_snippet
+		forward_auth authelia:9091 {
+			uri /api/authz/forward-auth
+			copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
+			header_up X-Forwarded-For {client_ip}
+		}
+		reverse_proxy http://dockhand:3000 {
+			header_up X-Forwarded-For {client_ip}
+		}
+	}
+	handle @logs {
+		import trapdoor_snippet
+		forward_auth authelia:9091 {
+			uri /api/authz/forward-auth
+			copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
+			header_up X-Forwarded-For {client_ip}
+		}
+		#routing is handled by vmauth to grafana victoria-metrics and victoria-logs
+		reverse_proxy http://vmauth:8427 {
+			header_up X-Forwarded-For {client_ip}
+		}
+	}
+	handle @box {
+		import trapdoor_snippet
+		forward_auth authelia:9091 {
+			uri /api/authz/forward-auth
+			copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
+			header_up X-Forwarded-For {client_ip}
+		}
+		@sonarr path /sonarr /sonarr/*
+		@radarr path /radarr /radarr/*
+		@qui path /qui
+		@autobrr path /autobrr
+		@prowlarr path /prowlarr /prowlarr/*
+		@tracearr path /tracearr
+		@wizarr path /wizarr
+		redir /qbit /qbit/
+		handle @sonarr {
+			reverse_proxy http://sonarr:8989 {
+				header_up X-Forwarded-For {client_ip}
+			}
+		}
+		handle @radarr {
+			reverse_proxy http://radarr:7878 {
+				header_up X-Forwarded-For {client_ip}
+			}
+		}
+		handle_path /qbit/* {
+			reverse_proxy http://qbittorrent:8080 {
+				header_up X-Forwarded-For {client_ip}
+				header_up Host box.dyslexicevo.dev
+				header_up X-Forwarded-Host {hostport}
+				header_up -Origin
+				header_up -Referer
+			}
+		}
+		handle @qui {
+			reverse_proxy http://qui:7476 {
+				header_up X-Forwarded-For {client_ip}
+			}
+		}
+		handle @autobrr {
+			reverse_proxy http://autobrr:7474 {
+				header_up X-Forwarded-For {client_ip}
+			}
+		}
+		handle @prowlarr {
+			reverse_proxy http://prowlarr:9696 {
+				header_up X-Forwarded-For {client_ip}
+			}
+		}
+		handle @tracearr {
+			reverse_proxy http://tracearr:3000 {
+				header_up X-Forwarded-For {client_ip}
+			}
+		}
+		handle @wizarr {
+			reverse_proxy http://wizarr:5690 {
+				header_up X-Forwarded-For {client_ip}
+			}
+		}
+		reverse_proxy http://arr-dashboard:3000 {
+			header_up X-Forwarded-For {client_ip}
+		}
+	}
+	handle @atlas {
+		import trapdoor_snippet
+		reverse_proxy http://atlas_nginx {
+			header_up X-Forwarded-For {client_ip}
+		}
+	}
+	handle @wiki {
+		import trapdoor_snippet
+		forward_auth authelia:9091 {
+			uri /api/authz/forward-auth
+			copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
+		}
+		reverse_proxy http://leafwiki:8080
+	}
+	handle @git {
+		import trapdoor_snippet
+		forward_auth authelia:9091 {
+			uri /api/authz/forward-auth
+			copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
+		}
+		reverse_proxy http://forgejo:3000
+	}
+	handle @ha {
+		import trapdoor_snippet
+		reverse_proxy http://192.168.1.246:8123
+	}
+	handle_errors 418 {
+		respond "{err.status_code} {err.status_text}"
+	}
+	handle_errors {
+		redir https://maintenance.dyslexicevo.dev
+	}
+	handle {
+		redir https://maintenance.dyslexicevo.dev
+	}
+}
+dyslexicevo.dev {
+	log access {
+		output stdout
+		format transform `\{"_msg":"{request>method} {request>host} status={status} client={request>client_ip}", "level":"access", "client":"{request>client_ip}", "hostname":"{request>host}", "uri":"{request>uri}", "status":"{status}"}`
+	}
+	tls {
+		dns cloudflare 9UURiy7Vm8hpY58fSSelnCkRCO1fXLzWQ6LnKals
+		resolvers 1.1.1.1
+	}
+	import trapdoor_snippet
+	reverse_proxy http://glance:8080
+
+	handle_errors {
+		redir https://maintenance.dyslexicevo.dev
+	}
+}
