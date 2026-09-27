@@ -83,7 +83,7 @@ services:
         # Copy the custom compiled binary from the builder stage
         COPY --from=builder /usr/bin/caddy /usr/bin/caddy
     restart: unless-stopped
-    container_name: caddy-reverse-proxy
+    container_name: reverse-proxy
     depends_on:
       locket:
         condition: service_healthy
