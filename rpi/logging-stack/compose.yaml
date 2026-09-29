@@ -91,7 +91,7 @@ services:
     expose:
       - 8428
     volumes:
-      - /mnt/usb/dockerlogging/vm-data:/storage
+      - /mnt/usb/docker/logging/vm-data:/storage
       - ./config/victoriametrics/prometheus-vl-single.yml:/etc/prometheus/prometheus.yml
     command:
       - "--storageDataPath=/storage"
