@@ -35,7 +35,7 @@ services:
     command: ['/usr/local/bin/hawser']
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /opt/stacks:/opt/stacks
+      - /opt/stacks:/data/stacks
       - secrets-store-agent:/secrets:ro
       - ./init/init.sh:/init.sh:ro
     environment:
