@@ -4,8 +4,8 @@ This repository contains Docker Compose stacks for self-hosted services, grouped
 
 ## Local stacks
 
-- [local/arr-stack](local/arr-stack): media automation stack configuration
-- [local/irc-client](local/irc-client): IRC client stack
+- [epyc/arr-stack](epyc/arr-stack): media automation stack configuration
+- [epyc/irc-client](epyc/irc-client): IRC client stack
 
 ## NAS stacks
 

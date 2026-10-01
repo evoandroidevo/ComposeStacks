@@ -1,6 +1,6 @@
-# Local stacks overview
+# Epyc stacks overview
 
-This folder contains the local Docker Compose stacks for media automation and IRC. See the [repository overview](../README.md) for stacks deployed on the NAS, NUC, and Raspberry Pi.
+This folder contains Docker Compose stacks for media automation and IRC. See the [repository overview](../README.md) for stacks deployed on the NAS, NUC, and Raspberry Pi.
 
 ## Stacks
 
