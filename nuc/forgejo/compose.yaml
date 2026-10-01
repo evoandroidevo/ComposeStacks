@@ -96,7 +96,7 @@ secrets:
     file: /etc/op/token
 
 volumes:
-  mount-to-prevent-anon-volumes-forgjo:
+  mount-to-prevent-anon-volumes-forgejo:
     driver: local
   git-data:
     driver: local
