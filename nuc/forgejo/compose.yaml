@@ -27,6 +27,7 @@ services:
     volumes:
       - secrets-store-forgejo:/run/secrets/locket
       - ./config/postgres:/postgres:ro
+      - mount-to-prevent-anon-volumes-forgejo:/templates
 
   forgejo:
     image: codeberg.org/forgejo/forgejo:16-rootless
@@ -83,7 +84,7 @@ services:
           subpath: postgres
       - type: volume
         source: forgejo-db-data
-        target: /var/lib/postgresql
+        target: /var/lib/postgresql/data
 
 networks:
   default: {}
@@ -95,6 +96,8 @@ secrets:
     file: /etc/op/token
 
 volumes:
+  mount-to-prevent-anon-volumes-forgjo:
+    driver: local
   git-data:
     driver: local
   forgejo-db-data:
