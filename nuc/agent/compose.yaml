@@ -21,6 +21,7 @@ services:
       - op_token
     volumes:
       - secrets-store-agent:/run/secrets/locket
+      - mount-to-prevent-anon-volumes-agent:/templates
 
   hawser:
     container_name: hawser-nuc
@@ -35,9 +36,10 @@ services:
     command: ['/usr/local/bin/hawser']
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /opt/stacks:/data/stacks
+      - /opt/stacks:/opt/stacks
       - secrets-store-agent:/secrets:ro
       - ./init/init.sh:/init.sh:ro
+      - mount-to-prevent-anon-volumes-agent:/data/stacks
     environment:
       - TZ=America/Chicago
       - STACKS_DIR=/opt/stacks
@@ -70,6 +72,8 @@ secrets:
     file: /etc/op/token
 
 volumes:
+  mount-to-prevent-anon-volumes-agent:
+    driver: local
   secrets-store-agent:
     driver: local
     driver_opts:
