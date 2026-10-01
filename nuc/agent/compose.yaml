@@ -26,6 +26,9 @@ services:
     container_name: hawser-nuc
     restart: unless-stopped
     image: ghcr.io/finsys/hawser:latest
+    depends_on:
+      locket:
+        condition: service_healthy
     # Override the default entrypoint to load the token from the secret file into an environment variable without writing
     # them to disk, then exec the original entrypoint
     entrypoint: ['/init.sh -f /run/secrets/locket/token']
