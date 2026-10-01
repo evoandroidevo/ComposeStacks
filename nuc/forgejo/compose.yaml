@@ -63,7 +63,6 @@ services:
   forgejo-db:
     image: postgres:14
     container_name: forgejo-db
-    user: "65532:65532"
     depends_on:
       locket: 
         condition: service_healthy
