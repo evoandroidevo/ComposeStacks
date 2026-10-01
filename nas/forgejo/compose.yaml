@@ -42,7 +42,7 @@ services:
       - FORGEJO__database__PASSWD__FILE=/config/database_user_password
     volumes:
       - type: volume
-        source: nas-data
+        source: git-data
         target: /var/lib/gitea
       - /etc/localtime:/etc/localtime:ro
       - type: volume
@@ -94,12 +94,8 @@ secrets:
     file: /etc/op/token
 
 volumes:
-  nas-data:
+  git-data:
     driver: local
-    driver_opts:
-      type: nfs
-      o: "addr=192.168.1.21,rw,sync,nfsvers=4,nolock,hard"
-      device: ":/mnt/thehub/Data/Code/forgjo-data"
   forgejo-db-data:
     driver: local
   secrets-store-forgejo:
