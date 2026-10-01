@@ -19,12 +19,12 @@ services:
       - secrets-store-agent:/run/secrets/locket
 
   hawser:
-    container_name: hawser-truenas
+    container_name: hawser-nuc
     restart: unless-stopped
     image: ghcr.io/finsys/hawser:latest
     # Override the default entrypoint to load the token from the secret file into an environment variable without writing
     # them to disk, then exec the original entrypoint
-    enterypoint: ['/init.sh -f /run/secrets/locket/token']
+    entrypoint: ['/init.sh -f /run/secrets/locket/token']
     command: ['/usr/local/bin/hawser']
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -34,7 +34,7 @@ services:
       - TZ=America/Chicago
       - STACKS_DIR=/opt/stacks
       - PORT=2376
-      - AGENT_NAME=truenas
+      - AGENT_NAME=nuc
     ports:
       - 2376:2376
     labels:
