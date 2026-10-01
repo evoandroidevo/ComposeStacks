@@ -31,12 +31,12 @@ services:
         condition: service_healthy
     # Override the default entrypoint to load the token from the secret file into an environment variable without writing
     # them to disk, then exec the original entrypoint
-    entrypoint: ['/init.sh -f /run/secrets/locket/token']
+    entrypoint: ["/init.sh", "-f", "/config/.env"]
     command: ['/usr/local/bin/hawser']
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /opt/stacks:/opt/stacks
-      - secrets-store-agent:/run/secrets/locket:ro
+      - secrets-store-agent:/secrets/locket:ro
       - ./init/init.sh:/init.sh:ro
     environment:
       - TZ=America/Chicago
