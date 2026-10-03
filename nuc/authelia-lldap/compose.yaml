@@ -23,14 +23,12 @@ services:
       - "--op-token=file:/run/secrets/op_token"
       - "--map=/authelia:/run/secrets/locket/authelia"
       - "--map=/lldap:/run/secrets/locket/lldap"
-      - "--map=/postgres:/run/secrets/locket/postgres"
     secrets:
       - op_token
     volumes:
       # Mount in your actual secret templates, with secret references
       - ./config/authelia:/authelia:ro
       - ./config/lldap:/lldap:ro
-      - ./config/postgres:/postgres:ro
       # Mount in your output directory, where you want secrets materialized
       - secrets-store-auth:/run/secrets/locket
 
@@ -40,25 +38,14 @@ services:
       locket:
         condition: service_healthy
     container_name: authdb
-    # Override the default entrypoint to run our init script first, which will populate the environment variables from the secrets without
-    # writing them to disk, then exec the original entrypoint
-    # https://github.com/docker-library/postgres/blob/master/15/alpine3.24/Dockerfile
-    entrypoint: ["/init.sh", "-f", "/config/.env"] # works
-    command: ["docker-entrypoint.sh", "postgres"] # get error about this script not found?
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     expose:
       - 5432
     restart: unless-stopped
     volumes:
-      - type: bind
-        source: ./init/init.sh
-        target: /init.sh
-        read_only: true
-      - type: volume
-        source: secrets-store-auth
-        target: /config
-        read_only: true
-        volume:
-          subpath: postgres
       - type: volume
         source: authdb-git
         target: /var/lib/postgresql
