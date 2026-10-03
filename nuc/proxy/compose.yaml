@@ -87,6 +87,8 @@ services:
     depends_on:
       locket:
         condition: service_healthy
+    environment:
+      - CF_API_TOKEN=${CF_API_TOKEN}
     cap_add:
       - NET_ADMIN
     ports:
