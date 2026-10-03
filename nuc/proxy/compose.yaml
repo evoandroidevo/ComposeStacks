@@ -170,8 +170,6 @@ networks:
 volumes:
   caddy_data:
     driver: local
-  parts-tracking_inventree_data:
-    external: true
   caddy_config:
     driver: local
   # crowdsec-db:
