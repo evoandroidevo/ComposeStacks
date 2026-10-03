@@ -120,12 +120,11 @@ services:
           subpath: vmauth
     command:
       - "--auth.config=/config/config.yml"
-    expose:
-      - 8427
+    ports:
+      - 8427:8427
     restart: always
     networks:
       - default
-      - proxy
 
   # vmalert executes alerting and recording rules according to the given rule type.
   vmalert:
@@ -170,8 +169,6 @@ services:
 
 networks:
   default: {}
-  proxy:
-    external: true
 
 secrets:
   op_token:

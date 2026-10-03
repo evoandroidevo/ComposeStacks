@@ -11,8 +11,8 @@ services:
     image: ghcr.io/ffind-dev/pve-ups:latest
     container_name: pve-ups
     restart: unless-stopped
-    expose:
-      - 8080
+    ports:
+      - 8080:8080
     environment:
       # Baked into the image already; only override if you know what you're doing.
       - PVE_USV_DEPLOYMENT=docker
@@ -31,12 +31,9 @@ services:
       retries: 3
     networks:
       - default
-      - proxy
 
 networks:
   default: {}
-  proxy:
-    external: true
 
 volumes:
   pve-ups-config:
