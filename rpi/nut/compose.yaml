@@ -7,7 +7,7 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
-  command:
+    command:
       - "--provider=op"
       # Park is needed otherwise when the continer exits it will remove the files creates in the tempfs volume
       - "--mode=park"
@@ -21,10 +21,10 @@ services:
       # Dockhand needs the Encryption key to be 32 bytes
       - "--secret="
       # --secret=file name=file contents
-      secrets:
+    secrets:
       - op_token
     volumes:
-      - secrets-store-nut:/run/secrets/locket
+      - secrets-store-ups-logging:/run/secrets/locket
 
   nut:
     image: instantlinux/nut-upsd:latest
@@ -32,13 +32,13 @@ services:
     restart: always
     depends_on:
       locket:
-        condition: service-healthy
+        condition: service_healthy
     environment:
       NUT_DEBUG_LEVEL: 0
-    ports:
-      - 3493:3493
+    expose:
+      - 3493
     volumes:
-      - nut-data:/etc/nut/local
+      - /mnt/usb/docker/ups-logging/nut-data:/etc/nut/local
 
   peanut:
     image: brandawg93/peanut:latest
@@ -47,9 +47,9 @@ services:
     # TODO: check if the nut container has health checks
     depends_on:
       nut:
-        condition: service started
+        condition: service_started
     volumes:
-      - peanut-data:/config
+      - /mnt/usb/docker/ups-logging/peanut-data:/config
     ports:
       - 8080:8080
     environment:
@@ -60,11 +60,7 @@ secrets:
     file: /etc/op/token
 
 volumes:
-  nut-data:
-    driver: local
-  peanut-data:
-    driver: local
-  secrets-store-agent:
+  secrets-store-ups-logging:
     driver: local
     driver_opts:
       type: tmpfs
