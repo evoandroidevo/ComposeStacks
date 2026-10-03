@@ -104,16 +104,6 @@ services:
           subpath: caddy
       - caddy_data:/data
       - caddy_config:/config
-      - type: volume
-        source: parts-tracking_inventree_data
-        target: /var/www/static
-        volume:
-          subpath: static
-      - type: volume
-        source: parts-tracking_inventree_data
-        target: /var/www/media
-        volume:
-          subpath: media
     networks:
       - default
       - proxy
