@@ -34,7 +34,7 @@ webauthn:
     discoverability: 'preferred'
     user_verification: 'preferred'
   metadata:
-    enabled: true
+    enabled: false
     cache_policy: relaxed
     validate_trust_anchor: false
     validate_entry: true
