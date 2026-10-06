@@ -74,11 +74,8 @@ services:
         target: /run/secrets/sonarr
         volume:
           subpath: sonarr
-    expose:
-      - 8989
-    networks:
-      - default
-      - proxy
+    ports:
+      - 8989:8989
 
   radarr:
     image: ghcr.io/linuxserver/radarr:latest
@@ -106,11 +103,8 @@ services:
         target: /run/secrets/radarr
         volume:
           subpath: radarr
-    expose:
-      - 7878
-    networks:
-      - default
-      - proxy
+    ports:
+      - 7878:7878
 
   prowlarr:
     image: ghcr.io/linuxserver/prowlarr:latest
@@ -137,11 +131,8 @@ services:
         target: /run/secrets/prowlarr
         volume:
           subpath: prowlarr
-    expose:
-      - 9696
-    networks:
-      - default
-      - proxy
+    ports:
+      - 9696:9696
 
   qbittorrent:
     image: ghcr.io/linuxserver/qbittorrent:latest
@@ -161,15 +152,11 @@ services:
         target: /downloads
         volume:
           subpath: Torrents
-    expose:
-      - 8080
     ports:
       - "33237:33237"
       - "33237:33237/udp"
+      - "8080:8080"
     stop_grace_period: "10s"
-    networks:
-      - default
-      - proxy
 
   flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:latest
@@ -195,18 +182,15 @@ services:
       - PGID=1000 # Set to your group ID (run `id -g` on host)
     volumes:
       - arrstack-dashboard:/config
-    expose:
-      - 3000
-    networks:
-      - proxy
-      - default
+    ports:
+      - 3005:3000
 
   qui:
     image: ghcr.io/autobrr/qui:latest
     container_name: qui
     restart: unless-stopped
-    expose:
-      - 7476
+    ports:
+      - 7476:7476
     volumes:
       - qui-arrstack:/data
     environment:
@@ -224,9 +208,6 @@ services:
       - QUI__AUTH_DISABLED=true
       - QUI__I_ACKNOWLEDGE_THIS_IS_A_BAD_IDEA=true
       - QUI__AUTH_DISABLED_ALLOWED_CIDRS=127.0.0.1/32,192.168.1.0/24
-    networks:
-      - default
-      - proxy
 
   autobrr:
     image: ghcr.io/autobrr/autobrr:latest
@@ -240,11 +221,8 @@ services:
       - AUTOBRR__HOST=0.0.0.0
     volumes:
       - autobrr-arrstack:/config
-    expose:
-      - 7474
-    networks:
-      - default
-      - proxy
+    ports:
+      - 7474:7474
 
   # TODO: investigate how profilarr handles config files, check if they can be added to the repo for no setup on first run
   # profilarr:
@@ -285,8 +263,8 @@ services:
       - PGID=1000
       - TZ=America/Chicago
       - port=5055
-    expose:
-      - 5055
+    ports:
+      - 5055:5055
     volumes:
       - seerr-data-arrstack:/app/config
     healthcheck:
@@ -296,9 +274,6 @@ services:
       interval: 15s
       retries: 3
     restart: unless-stopped
-    networks:
-      - default
-      - proxy
 
   # scraparr:
   #   image: ghcr.io/thecfu/scraparr:latest
@@ -442,9 +417,6 @@ services:
   #     - default
   #     - proxy
 
-networks:
-  proxy:
-    external: true
 
 secrets:
   op_token:
