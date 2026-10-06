@@ -36,7 +36,7 @@ webauthn:
   metadata:
     enabled: true
     cache_policy: relaxed
-    validate_trust_anchor: true
+    validate_trust_anchor: false
     validate_entry: true
     validate_entry_permit_zero_aaguid: false
     validate_status: true
