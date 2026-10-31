@@ -11,10 +11,10 @@ apt-get install -y vector
 
 ## 2. Copy the configuration
 
-From the root of this repository:
+The Proxmox host doesn't have a copy of this repository, so run this from the repository root on another machine:
 
 ```bash
-cp rpi/logging-stack/setup/proxmox/vector.yaml /etc/vector/vector.yaml
+scp rpi/logging-stack/setup/proxmox/vector.yaml root@<proxmox-ip>:/etc/vector/vector.yaml
 ```
 
 ## 3. Set the endpoint and credentials
@@ -36,23 +36,29 @@ chmod 640 /etc/vector/secrets/*
 
 ## 4. Allow access to the PVE logs
 
-The task and access logs are normally owned by `www-data`, so check their permissions:
+`/var/log/pveproxy` is only accessible to its owner, so group membership doesn't help. Give Vector a read capability with a systemd drop-in, which survives Vector and Proxmox upgrades. The capability bypasses read permissions across the host, so the drop-in also blocks the most sensitive paths:
 
 ```bash
-ls -ld /var/log/pve/tasks /var/log/pveproxy
-sudo -u vector ls /var/log/pve/tasks /var/log/pveproxy
+mkdir -p /etc/systemd/system/vector.service.d
+cat > /etc/systemd/system/vector.service.d/10-read-logs.conf <<'EOF'
+[Service]
+AmbientCapabilities=CAP_DAC_READ_SEARCH
+NoNewPrivileges=yes
+ProtectHome=yes
+InaccessiblePaths=-/root
+InaccessiblePaths=-/etc/shadow
+InaccessiblePaths=-/etc/ssh
+InaccessiblePaths=-/etc/pve
+EOF
+systemctl daemon-reload
 ```
 
-If the `vector` user can't read them, add it to the owning group:
-
-```bash
-usermod -aG www-data vector
-```
+Vector can still read other files on the host, so add any other sensitive paths to the list.
 
 ## 5. Validate and start
 
 ```bash
-vector validate --no-environment /etc/vector/vector.yaml
+runuser -u vector -- vector validate --no-environment --resolve-secrets /etc/vector/vector.yaml
 systemctl enable --now vector
 systemctl status vector
 ```

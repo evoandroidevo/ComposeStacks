@@ -17,7 +17,6 @@ sources:
     type: journald
     # don't backfill the whole journal on first start
     since_now: true
-    current_boot_only: false
     # exclude_units: [pvestatd.service]   # uncomment if something is too chatty
 
   # One file per PVE task (VM start/stop, backups, migrations, ...)
