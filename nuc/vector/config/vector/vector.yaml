@@ -105,6 +105,9 @@ transforms:
     route:
       caddy: '.stack == "proxy" && .service == "caddy"'
       lldap: '.service == "lldap"'
+      postgres: 'starts_with(string(.image) ?? "", "postgres:")'
+      redis: 'starts_with(string(.image) ?? "", "redis:")'
+      cloudflared: 'starts_with(string(.image) ?? "", "cloudflare/cloudflared:")'
   # The proxy's Caddyfile sets message_key to _msg. Logs with an error field already use it as the message
   caddy_fix:
     type: remap
@@ -118,17 +121,140 @@ transforms:
       if .level == "access" {
         .uri = replace(string(.uri) ?? "", r'(?i)([?&](?:api_?key|access_?token|token|auth|password|secret)=)[^&]*', "$1[redacted]")
       }
-  # Session lines are too frequent to be worth storing
+  # LLDAP logs: TIME  LEVEL  TREE ICON [level]: MESSAGE. The tree and icon show how lines nest
   lldap_fix:
-    type: filter
+    type: remap
     inputs:
       - split.lldap
+    source: |
+      line = parse_regex(string(.message) ?? "", r'^\S+\s+(?P<level>[A-Z]+)\s+(?P<text>.*)$') ?? null
+      if line != null {
+        .level = downcase(string!(line.level))
+        text = string!(line.text)
+        inner = parse_regex(text, r'^[^\[]*\[[a-z]+\]:\s*(?P<text>.*)$') ?? null
+        .message = if inner != null { inner.text } else { replace(text, r'^[┕┝│━─\s]+', "") }
+
+        login = parse_regex(string!(.message), r'^Login attempt for "(?P<user>[^"]*)"') ?? null
+        if login != null { .user = login.user }
+
+        # LDAP request [ 53.2ms | 100.00% ] session_id: ID
+        request = parse_regex(string!(.message), r'^LDAP request \[\s*(?P<value>[\d.]+)(?P<unit>ns|µs|us|ms|s)\s*\|[^\]]*\]\s*(?:session_id:\s*(?P<session_id>\S+))?') ?? null
+        if request != null {
+          .message = "LDAP request"
+          if request.session_id != null { .session_id = request.session_id }
+          value, err = to_float(request.value)
+          if err == null {
+            unit = string!(request.unit)
+            .duration_ms = if unit == "s" { value * 1000.0 }
+              else if unit == "ms" { value }
+              else if unit == "ns" { value / 1000000.0 }
+              else { value / 1000.0 }
+          }
+        }
+      }
+  # Session lines are too frequent to be worth storing
+  lldap_noise:
+    type: filter
+    inputs:
+      - lldap_fix
     condition: '!match(string(.message) ?? "", r''LDAP session (start|end)\b'')'
+  # Postgres logs: TIME TZ [PID] SEVERITY:  MESSAGE
+  postgres_fix:
+    type: remap
+    inputs:
+      - split.postgres
+    source: |
+      line = parse_regex(string(.message) ?? "", r'^\d{4}-\d{2}-\d{2} [\d:.]+ \S+ \[(?P<pid>\d+)\] (?P<severity>[A-Z0-9]+):\s+(?P<text>.*)$') ?? null
+      if line != null {
+        .pid = to_int(line.pid) ?? null
+        severity = string!(line.severity)
+        if includes(["DETAIL", "HINT", "CONTEXT", "STATEMENT", "QUERY"], severity) {
+          # These add to the line before them, so they have no level of their own
+          .message = severity + ": " + string!(line.text)
+        } else {
+          .message = line.text
+          .level = if includes(["FATAL", "PANIC"], severity) { "fatal" }
+            else if severity == "ERROR" { "error" }
+            else if severity == "WARNING" { "warn" }
+            else if starts_with(severity, "DEBUG") { "debug" }
+            else { "info" }
+        }
+      }
+  # Redis logs: PID:ROLE DD Mon YYYY HH:MM:SS.mmm LEVEL MESSAGE
+  redis_fix:
+    type: remap
+    inputs:
+      - split.redis
+    source: |
+      line = parse_regex(string(.message) ?? "", r'^(?P<pid>\d+):(?P<role>[XCSM]) \d{1,2} [A-Za-z]{3} \d{4} [\d:.]+ (?P<level>[.\-*#]) (?P<text>.*)$') ?? null
+      if line != null {
+        .message = line.text
+        .pid = to_int(line.pid) ?? null
+        role = string!(line.role)
+        .role = if role == "M" { "master" }
+          else if role == "S" { "replica" }
+          else if role == "C" { "child" }
+          else { "sentinel" }
+        level = string!(line.level)
+        .level = if level == "#" { "warn" }
+          else if level == "*" { "info" }
+          else { "debug" }
+      }
+  # Cloudflared logs: TIME LEVEL [TEXT] key=value key="value"
+  cloudflared_fix:
+    type: remap
+    inputs:
+      - split.cloudflared
+    source: |
+      line = parse_regex(string(.message) ?? "", r'^\S+Z (?P<level>[A-Z]{3})\s+(?P<rest>.*)$') ?? null
+      if line != null {
+        level = string!(line.level)
+        .level = if level == "ERR" { "error" }
+          else if level == "WRN" { "warn" }
+          else if level == "INF" { "info" }
+          else if level == "DBG" { "debug" }
+          else if level == "FTL" { "fatal" }
+          else { downcase(level) }
+
+        rest = string!(line.rest)
+        .message = rest
+        parts = parse_regex(rest, r'^(?P<text>(?:[^=]*\s)?)(?P<fields>[A-Za-z_][\w.-]*=.*)$') ?? null
+        if parts != null {
+          text = strip_whitespace(string!(parts.text))
+          fields = parse_logfmt(string!(parts.fields)) ?? {}
+
+          # An error becomes the message if the line has no text of its own
+          if text != "" {
+            .message = text
+          } else if is_string(fields.error) {
+            .message = fields.error
+            fields = remove!(fields, ["error"])
+          }
+
+          # Same protections as shape_docker: never overwrite our fields, and drop anything that looks like a credential
+          reserved = [
+            "message", "level", "timestamp", "host", "service", "stack", "source", "source_type",
+            "stream", "image", "container_name", "_msg", "_time", "_stream", "_stream_id"
+          ]
+          fields = filter(fields) -> |key, _value| {
+            !includes(reserved, key) && !match(key, r'(?i)(authorization|cookie|passw(or)?d|secret|token|api[_-]?key)')
+          }
+          . = merge(., fields)
+
+          # Clients can send credentials in the query string, which the field name filter can't see
+          if is_string(.dest) {
+            .dest = replace(string!(.dest), r'(?i)([?&](?:api_?key|access_?token|token|auth|password|secret)=)[^&]*', "$1[redacted]")
+          }
+        }
+      }
   drop_empty:
     type: filter
     inputs:
       - caddy_fix
-      - lldap_fix
+      - lldap_noise
+      - postgres_fix
+      - redis_fix
+      - cloudflared_fix
       - split._unmatched
     condition: 'strip_whitespace(string(.message) ?? "") != ""'
 
