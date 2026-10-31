@@ -1,0 +1,78 @@
+services:
+  locket:
+    image: ghcr.io/bpbradley/locket:op
+    user: "65532:1000"
+    container_name: locket-vector
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    command:
+      # Park is needed otherwise when the continer exits it will remove the files creates in the tmpfs volume
+      - "--mode=park"
+      - "--inject-failure-policy=error"
+      - "--log-level=info"
+      # -rw-r----- file mode
+      - "--file-mode=0640"
+      - "--dir-mode=0740"
+      - "--op-token=file:/run/secrets/op_token"
+      - "--secret=vector_user={{ op://DockerSecrets/logging-stack/vector_user }}"
+      - "--secret=vector_password={{ op://DockerSecrets/logging-stack/vector_password }}"
+      - "--secret=vector_endpoint={{ op://DockerSecrets/logging-stack/vector_endpoint }}"
+    secrets:
+      - op_token
+    volumes:
+      - secrets-store-vector:/run/secrets/locket
+      - mount-to-prevent-anon-volumes-vector:/templates
+
+  # Limits Vector to the read-only Docker API endpoints that docker_logs needs
+  socket-proxy:
+    image: lscr.io/linuxserver/socket-proxy:3.4.7
+    container_name: vector-socket-proxy
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /run
+    expose:
+      - 2375
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - ALLOW_LOGS=1
+      - CONTAINERS=1
+      - EVENTS=1
+      - INFO=1
+      - PING=1
+      - VERSION=1
+
+  vector:
+    image: timberio/vector:0.60.0-alpine
+    container_name: vector
+    # Used as the host field on every log line
+    hostname: epyc
+    restart: unless-stopped
+    depends_on:
+      locket:
+        condition: service_healthy
+      socket-proxy:
+        condition: service_started
+    volumes:
+      - ./config/vector/vector.yaml:/etc/vector/vector.yaml:ro
+      - secrets-store-vector:/run/secrets/locket:ro
+      - vector-data:/var/lib/vector
+
+secrets:
+  op_token:
+    file: /etc/op/token
+
+volumes:
+  mount-to-prevent-anon-volumes-vector:
+    driver: local
+  vector-data:
+    driver: local
+  secrets-store-vector:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: uid=65532,gid=1000,mode=740

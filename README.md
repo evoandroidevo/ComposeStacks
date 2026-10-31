@@ -6,6 +6,7 @@ This repository contains Docker Compose stacks for self-hosted services, grouped
 
 - [epyc/arr-stack](epyc/arr-stack): media automation stack configuration
 - [epyc/irc-client](epyc/irc-client): IRC client stack
+- [epyc/vector](epyc/vector): Vector log shipping for Docker logs
 
 ## NAS stacks
 
