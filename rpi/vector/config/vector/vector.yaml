@@ -133,10 +133,47 @@ transforms:
         "level": level,
         "source": "journald"
       }
+  # Sends apps that need their own handling to the steps below. Everything else goes through split._unmatched
+  split:
+    type: route
+    inputs:
+      - shape_docker
+    route:
+      pve_ups: '.service == "pve-ups"'
+  # These logs already parse correctly, app-specific rules go here
+  # Uvicorn logs: LEVEL:     MESSAGE, and access lines add client:port - "METHOD PATH HTTP/x" STATUS
+  pve_ups_fix:
+    type: remap
+    inputs:
+      - split.pve_ups
+    source: |
+      line = parse_regex(string(.message) ?? "", r'^(?P<level>[A-Z]+):\s+(?P<text>.*)$') ?? null
+      if line != null {
+        .message = line.text
+        .level = downcase(string!(line.level))
+        if .level == "warning" { .level = "warn" }
+
+        access = parse_regex(string!(line.text), r'^(?P<client>\S+):\d+ - "(?P<method>[A-Z]+) (?P<path>\S+) HTTP/[\d.]+" (?P<status>\d{3})') ?? null
+        if access != null {
+          .client = access.client
+          .method = access.method
+          .path = access.path
+          .status = to_int(access.status) ?? null
+          code = .status || 0
+          if code >= 500 { .level = "error" } else if code >= 400 { .level = "warn" }
+        }
+      }
+  # Successful health checks from inside the container are too frequent to be worth storing
+  pve_ups_noise:
+    type: filter
+    inputs:
+      - pve_ups_fix
+    condition: '!(.client == "127.0.0.1" && .path == "/api/health" && (to_int(.status) ?? 500) < 400)'
   drop_empty:
     type: filter
     inputs:
-      - shape_docker
+      - pve_ups_noise
+      - split._unmatched
       - shape_journal
     condition: 'strip_whitespace(string(.message) ?? "") != ""'
 
