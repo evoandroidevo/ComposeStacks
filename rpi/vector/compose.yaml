@@ -37,6 +37,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
+      - ALLOW_LOGS=1
       - CONTAINERS=1
       - EVENTS=1
       - INFO=1
