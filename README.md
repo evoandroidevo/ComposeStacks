@@ -4,6 +4,7 @@ This repository contains Docker Compose stacks for self-hosted services, grouped
 
 ## Local stacks
 
+- [epyc/agent](epyc/agent): Epyc agent stack
 - [epyc/arr-stack](epyc/arr-stack): media automation stack configuration
 - [epyc/irc-client](epyc/irc-client): IRC client stack
 - [epyc/vector](epyc/vector): Vector log shipping for Docker logs

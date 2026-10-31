@@ -4,6 +4,7 @@ This folder contains Docker Compose stacks for media automation and IRC. See the
 
 ## Stacks
 
+- [agent](agent): Hawser agent for managing this host from Dockhand.
 - [arr-stack](arr-stack): media automation, requests, and related media tooling.
 - [vector](vector): ships this host's Docker logs to VictoriaLogs.
 
