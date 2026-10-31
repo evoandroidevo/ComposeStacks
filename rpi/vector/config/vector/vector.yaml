@@ -30,6 +30,8 @@ transforms:
       .stack = labels."com.docker.compose.project" || "standalone"
       .service = labels."com.docker.compose.service" || .container_name
       .source = "docker"
+      # Keeps container logs apart from the host's journal, which uses host: rpi
+      .host = "rpi-docker"
       del(.label)
       del(.container_id)
       del(.container_created_at)

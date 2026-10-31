@@ -43,15 +43,15 @@ docker compose logs -f vector
 Query VictoriaLogs from this host. Each query should return recent lines:
 
 ```bash
-curl -s http://localhost:8427/vl/select/logsql/query -d 'query=_time:5m host:rpi source:docker | limit 5'
-curl -s http://localhost:8427/vl/select/logsql/query -d 'query=_time:5m host:rpi source:journald | limit 5'
+curl -s http://localhost:8427/vl/select/logsql/query -d 'query=_time:5m host:rpi-docker | limit 5'
+curl -s http://localhost:8427/vl/select/logsql/query -d 'query=_time:5m host:rpi | limit 5'
 ```
 
 ## Log fields
 
 | Field | Docker | Journal |
 | --- | --- | --- |
-| `host` | `rpi` | `rpi` |
+| `host` | `rpi-docker` | `rpi` |
 | `source` | `docker` | `journald` |
 | `stack` | Compose project, or `standalone` | `host` |
 | `service` | Compose service, or the container name | syslog identifier, or the unit if there is none |
