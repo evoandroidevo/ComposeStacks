@@ -1,0 +1,104 @@
+{
+	admin off
+	auto_https off
+	persist_config off
+}
+
+http://:8427 {
+	# Writes need a login. Requests with credentials never reach the read routes below
+	@ingest header Authorization *
+	handle @ingest {
+		basic_auth {
+			{{ op://DockerSecrets/logging-stack/docker_user }} {{ op://DockerSecrets/logging-stack/docker_password_hash }}
+			{{ op://DockerSecrets/logging-stack/vector_user }} {{ op://DockerSecrets/logging-stack/vector_password_hash }}
+		}
+
+		@docker vars {http.auth.user.id} "{{ op://DockerSecrets/logging-stack/docker_user }}"
+		handle @docker {
+			rewrite * /insert/loki/api/v1/push
+			reverse_proxy victorialogs:9428 {
+				header_up -Authorization
+			}
+		}
+
+		@vector vars {http.auth.user.id} "{{ op://DockerSecrets/logging-stack/vector_user }}"
+		handle @vector {
+			rewrite * /insert/jsonline
+			reverse_proxy victorialogs:9428 {
+				header_up -Authorization
+			}
+		}
+	}
+
+	# Reads need no login, but only these clients can make them. remote_ip is the TCP source so it can't be spoofed with headers
+	# 192.168.1.217 is the NUC, Caddy there serves logs.* behind Authelia
+	# 172.16.0.0/12 is containers and processes on this host
+	@denied not remote_ip 192.168.1.100 192.168.1.102 192.168.6.2 192.168.6.3 192.168.1.217 172.16.0.0/12
+	handle @denied {
+		respond 403
+	}
+
+	# Backends get the path as sent, so don't leave them to resolve traversal attempts
+	# path_regexp only sees the cleaned path, so this has to check the raw one
+	@traversal expression `{path}.matches("(?i)\\.\\.|%2e")`
+	handle @traversal {
+		respond 400
+	}
+
+	# Only read endpoints are routed, so insert, delete, and admin paths can't be reached without a login
+	@vl_prefixed path /vl/select/*
+	handle @vl_prefixed {
+		uri strip_prefix /vl
+		reverse_proxy victorialogs:9428 {
+			flush_interval -1
+		}
+	}
+
+	@vm_prefixed path_regexp ^/vm/(prometheus/)?api/v1/(query|query_range|series|labels|label/[^/]+/values|metadata|status/[^/]+|rules|alerts)$
+	handle @vm_prefixed {
+		uri strip_prefix /vm
+		reverse_proxy victoriametrics:8428
+	}
+
+	@vm_ui path /vm/vmui /vm/vmui/*
+	handle @vm_ui {
+		uri strip_prefix /vm
+		reverse_proxy victoriametrics:8428
+	}
+
+	# vmalert picks the backend by API path, it sends both of these without a prefix
+	@vl_query path /select/*
+	handle @vl_query {
+		reverse_proxy victorialogs:9428 {
+			flush_interval -1
+		}
+	}
+
+	@vm_query path_regexp ^/(prometheus/)?api/v1/(query|query_range|series|labels|label/[^/]+/values|metadata|status/[^/]+|rules|alerts)$
+	handle @vm_query {
+		reverse_proxy victoriametrics:8428
+	}
+
+	# Grafana has no login of its own, so only the NUC's Caddy can reach it, after Authelia
+	# The secret stops anything else on the NUC from calling this route directly
+	@grafana {
+		path /grafana /grafana/*
+		remote_ip 192.168.1.217
+		header X-Grafana-Proxy-Secret "{{ op://DockerSecrets/logging-stack/grafana_proxy_secret }}"
+	}
+	handle @grafana {
+		reverse_proxy grafana:3000 {
+			header_up -X-Grafana-Proxy-Secret
+		}
+	}
+
+	@grafana_denied path /grafana /grafana/*
+	handle @grafana_denied {
+		respond 403
+	}
+
+	handle {
+		rewrite * /select/vmui{path}
+		reverse_proxy victorialogs:9428
+	}
+}
