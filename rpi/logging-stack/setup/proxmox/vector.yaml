@@ -1,0 +1,141 @@
+# Vector config for the Proxmox VE host -> VictoriaLogs (via the logging stack's Caddy, as the vector user)
+# Install path: /etc/vector/vector.yaml
+# Credentials live in /etc/vector/secrets/ (one file per secret, see README)
+
+data_dir: /var/lib/vector
+
+secret:
+  vlogs:
+    type: directory
+    path: /etc/vector/secrets
+    remove_trailing_whitespace: true
+
+sources:
+  # Everything systemd/kernel logs: pvedaemon, pveproxy, pve-cluster, corosync,
+  # pvestatd, pve-firewall, qmeventd, zfs-zed, smartd, sshd, kernel, ...
+  journald:
+    type: journald
+    # don't backfill the whole journal on first start
+    since_now: true
+    current_boot_only: false
+    # exclude_units: [pvestatd.service]   # uncomment if something is too chatty
+
+  # One file per PVE task (VM start/stop, backups, migrations, ...)
+  pve_tasks:
+    type: file
+    include:
+      - "/var/log/pve/tasks/*/UPID:*"
+    ignore_older_secs: 86400
+    read_from: beginning
+    # task logs often start with identical lines; fingerprint by inode instead of content
+    fingerprint:
+      strategy: device_and_inode
+
+  # API/GUI access log
+  pveproxy_access:
+    type: file
+    include:
+      - /var/log/pveproxy/access.log
+    ignore_older_secs: 86400
+
+transforms:
+  journald_shape:
+    type: remap
+    inputs: [journald]
+    source: |
+      unit = string(._SYSTEMD_UNIT) ?? null
+      ident = string(.SYSLOG_IDENTIFIER) ?? null
+      .source = "journald"
+      unit_name = replace(unit || "", r'\.service$', "")
+      .app = if ._TRANSPORT == "kernel" { "kernel" }
+        else if ident != null { ident }
+        else if unit_name != "" { unit_name }
+        else { "unknown" }
+      .unit = unit
+      .pid = ._PID
+
+      prio = to_int(.PRIORITY) ?? 6
+      .level = if prio <= 2 { "fatal" }
+        else if prio == 3 { "error" }
+        else if prio == 4 { "warn" }
+        else if prio == 7 { "debug" }
+        else { "info" }
+
+      # journald attaches ~30 fields per entry; keep only what's useful
+      . = {
+        "timestamp": .timestamp,
+        "message": .message,
+        "host": .host,
+        "source": .source,
+        "app": .app,
+        "unit": .unit,
+        "pid": .pid,
+        "level": .level,
+      }
+
+  tasks_shape:
+    type: remap
+    inputs: [pve_tasks]
+    source: |
+      .source = "pve_task"
+      file = string(.file) ?? ""
+      # UPID:<node>:<pid>:<pstart>:<starttime>:<type>:<id>:<user>:
+      u = parse_regex(file, r'(?P<upid>UPID:(?P<node>[^:]+):[0-9A-F]+:[0-9A-F]+:[0-9A-F]+:(?P<type>[^:]+):(?P<id>[^:]*):(?P<user>[^:]+):)') ?? {}
+      .upid = u.upid
+      .app = u.type || "task"
+      .task_id = u.id
+      .task_user = u.user
+      .level = if match(string(.message) ?? "", r'(?i)\b(error|failed|failure)\b') { "error" }
+        else if match(string(.message) ?? "", r'(?i)\bwarn(ing)?\b') { "warn" }
+        else { "info" }
+      del(.file)
+      del(.source_type)
+
+  pveproxy_shape:
+    type: remap
+    inputs: [pveproxy_access]
+    source: |
+      .source = "pveproxy"
+      .app = "pveproxy"
+      # ::ffff:192.168.1.10 - root@pam [30/10/2026:15:21:01 -0500] "GET /api2/json/... HTTP/1.1" 200 1234
+      p = parse_regex(string(.message) ?? "", r'^(?P<client>\S+) - (?P<user>\S+) \[(?P<ts>[^\]]+)\] "(?P<method>[A-Z]+) (?P<path>\S+) [^"]*" (?P<status>\d{3}) (?P<bytes>\d+|-)') ?? null
+      if p != null {
+        .client = p.client
+        .user = p.user
+        .method = p.method
+        .path = p.path
+        .status = to_int(p.status) ?? null
+        code = .status || 0
+        .level = if code >= 500 { "error" } else if code >= 400 { "warn" } else { "info" }
+      }
+      del(.file)
+      del(.source_type)
+
+  # The web GUI polls the API constantly; drop successful reads, keep logins,
+  # writes (POST/PUT/DELETE) and anything that failed.
+  pveproxy_filter:
+    type: filter
+    inputs: [pveproxy_shape]
+    condition: '!(.method == "GET" && (to_int(.status) ?? 0) < 400)'
+
+sinks:
+  victorialogs:
+    type: http
+    inputs: [journald_shape, tasks_shape, pveproxy_filter]
+    uri: "https://logs.<domain>.<tld>/?_msg_field=message&_time_field=timestamp&_stream_fields=host,source,app"
+    auth:
+      strategy: basic
+      user: "SECRET[vlogs.vector_user]"
+      password: "SECRET[vlogs.vector_password]"
+    encoding:
+      codec: json
+    framing:
+      method: newline_delimited
+    compression: gzip
+    batch:
+      max_bytes: 1048576
+      timeout_secs: 2
+    buffer:
+      type: disk
+      max_size: 536870912 # 512 MiB
+      when_full: block

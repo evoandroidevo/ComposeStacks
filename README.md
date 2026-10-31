@@ -20,6 +20,7 @@ This repository contains Docker Compose stacks for self-hosted services, grouped
 - [nuc/forgejo](nuc/forgejo): Forgejo stack configuration
 - [nuc/glances](nuc/glances): Glance dashboard (the directory name is plural)
 - [nuc/proxy](nuc/proxy): Caddy reverse proxy with a Cloudflare Tunnel
+- [nuc/vector](nuc/vector): Vector log shipping for Docker logs
 - [nuc/wiki](nuc/wiki): LeafWiki stack
 
 ## Raspberry Pi stacks
@@ -28,6 +29,7 @@ This repository contains Docker Compose stacks for self-hosted services, grouped
 - [rpi/logging-stack](rpi/logging-stack): Grafana, VictoriaLogs, VictoriaMetrics, and alerting tools
 - [rpi/nut](rpi/nut): Network UPS Tools stack
 - [rpi/ups](rpi/ups): PVE UPS stack
+- [rpi/vector](rpi/vector): Vector log shipping for Docker logs and the host journal
 
 ## Shared scripts
 

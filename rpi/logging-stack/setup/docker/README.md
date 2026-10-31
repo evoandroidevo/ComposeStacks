@@ -1,6 +1,29 @@
 # Loki logging driver setup
 
+> [!NOTE]
+> The [Raspberry Pi](../../../vector) and [NUC](../../../../nuc/vector) now ship container logs with Vector. Use this setup only on hosts that haven't moved to Vector.
+
 Use this setup when you want the Docker daemon to send container logs to a victorialogs endpoint.
+
+## Migrating from the Loki driver
+
+Running both ships every line twice, so remove the driver when you start Vector on a host:
+
+1. In `/etc/docker/daemon.json`, replace the `loki` settings with a local driver and rotation policy:
+
+   ```json
+   {
+     "log-driver": "json-file",
+     "log-opts": {
+       "max-size": "10m",
+       "max-file": "3"
+     }
+   }
+   ```
+
+2. Restart Docker with `sudo systemctl restart docker`. This restarts containers unless `live-restore` is enabled.
+3. Existing containers keep the driver they were created with, so recreate each stack with `docker compose up -d --force-recreate`.
+4. Once no container uses the driver, remove the plugin with `sudo docker plugin disable loki` and `sudo docker plugin rm loki`.
 
 ## Requirements
 
@@ -33,7 +56,7 @@ Create or update `/etc/docker/daemon.json` with the following settings:
 }
 ```
 > [!NOTE]
-> the above settings is how vmauth is configured to proxy based on user to the `insert/loki/api/v1/push` path
+> the above settings is how the logging stack's Caddy is configured to proxy based on user to the `insert/loki/api/v1/push` path
 ## Restart Docker
 
 Reload the Docker daemon configuration and restart Docker:

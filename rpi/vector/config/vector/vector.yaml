@@ -1,0 +1,164 @@
+data_dir: /var/lib/vector
+
+secret:
+  locket:
+    type: directory
+    path: /run/secrets/locket
+    remove_trailing_whitespace: true
+
+sources:
+  docker:
+    type: docker_logs
+    docker_host: http://socket-proxy:2375
+    # Prefix match on container name, skips this stack to avoid feedback loops
+    exclude_containers:
+      - vector
+      - locket-vector
+  journal:
+    type: journald
+    journal_directory: /journal
+    # Don't backfill the journal on first start
+    since_now: true
+
+transforms:
+  shape_docker:
+    type: remap
+    inputs:
+      - docker
+    source: |
+      labels = object(.label) ?? {}
+      .stack = labels."com.docker.compose.project" || "standalone"
+      .service = labels."com.docker.compose.service" || .container_name
+      .source = "docker"
+      del(.label)
+      del(.container_id)
+      del(.container_created_at)
+      del(.source_type)
+
+      raw = string(.message) ?? ""
+      parsed = null
+
+      # 1. JSON lines
+      if starts_with(raw, "{") {
+        parsed = object(parse_json(raw) ?? null) ?? null
+      }
+
+      # 2. logfmt (grafana, alertmanager, ...). Must start with key=value so prose mentioning level= is left alone
+      if parsed == null && match(raw, r'^[A-Za-z_][\w.-]*=') && match(raw, r'\b(level|lvl)=') {
+        parsed = parse_logfmt(raw) ?? null
+      }
+
+      # 3. VictoriaMetrics/VictoriaLogs default format: TIME<TAB>LEVEL<TAB>CALLER<TAB>MSG
+      if parsed == null {
+        parsed = parse_regex(raw, r'^\d{4}-\d{2}-\d{2}T\S+\t(?P<level>[a-z]+)\t(?P<caller>\S+)\t(?P<msg>.*)$') ?? null
+      }
+
+      if parsed != null {
+        p = object!(parsed)
+        msg = p.msg || p.message || p.MESSAGE || p.error || null
+        lvl = p.level || p.lvl || p.severity || null
+
+        # error is only redundant if it was used as the message
+        if p.msg == null && p.message == null && p.MESSAGE == null {
+          p = remove!(p, ["error"])
+        }
+
+        # Never let app fields clobber ours or VictoriaLogs' reserved fields, and drop anything that looks like a credential
+        reserved = [
+          "msg", "message", "MESSAGE", "level", "lvl", "severity",
+          "timestamp", "time", "ts", "t",
+          "host", "service", "stack", "source", "source_type",
+          "stream", "image", "container_name", "container_id", "container_created_at", "label",
+          "_msg", "_time", "_stream", "_stream_id"
+        ]
+        p = filter(p) -> |key, _value| { !includes(reserved, key) }
+        p = filter(flatten(p)) -> |key, _value| {
+          !match(key, r'(?i)(authorization|cookie|passw(or)?d|secret|token|api[_-]?key)')
+        }
+
+        . = merge(., p)
+        if msg != null { .message = msg }
+        if lvl != null { .level = lvl }
+      }
+
+      # Normalise level names. Numeric levels follow the pino/bunyan scale
+      if is_integer(.level) {
+        n = int!(.level)
+        .level = if n >= 60 { "fatal" }
+          else if n >= 50 { "error" }
+          else if n >= 40 { "warn" }
+          else if n >= 30 { "info" }
+          else if n >= 20 { "debug" }
+          else if n >= 10 { "trace" }
+          else { null }
+      } else if .level != null {
+        l = downcase(string(.level) ?? "")
+        .level = if l == "warning" || l == "wrn" { "warn" }
+          else if l == "err" || l == "eror" { "error" }
+          else if l == "inf" { "info" }
+          else if l == "dbg" { "debug" }
+          else if l == "crit" || l == "critical" || l == "panic" { "fatal" }
+          else if l == "" { null }
+          else { l }
+      }
+      if .level == null { del(.level) }
+  shape_journal:
+    type: remap
+    inputs:
+      - journal
+    source: |
+      priority = to_int(.PRIORITY || "6") ?? 6
+      level = if priority <= 2 {
+        "fatal"
+      } else if priority == 3 {
+        "error"
+      } else if priority == 4 {
+        "warn"
+      } else if priority <= 6 {
+        "info"
+      } else {
+        "debug"
+      }
+
+      # Journal entries carry dozens of fields, keep only the useful ones
+      . = {
+        "timestamp": .timestamp,
+        "message": .message,
+        "host": get_hostname!(),
+        "stack": "host",
+        "service": .SYSLOG_IDENTIFIER || ._SYSTEMD_UNIT || "journald",
+        "unit": ._SYSTEMD_UNIT,
+        "level": level,
+        "source": "journald"
+      }
+  drop_empty:
+    type: filter
+    inputs:
+      - shape_docker
+      - shape_journal
+    condition: 'strip_whitespace(string(.message) ?? "") != ""'
+
+sinks:
+  to_victorialogs:
+    type: http
+    inputs:
+      - drop_empty
+    # Caddy routes the vector user to /insert/jsonline. Keep _stream_fields low cardinality
+    uri: "http://host.docker.internal:8427/?_msg_field=message&_time_field=timestamp&_stream_fields=host,stack,service"
+    auth:
+      strategy: basic
+      user: "SECRET[locket.vector_user]"
+      password: "SECRET[locket.vector_password]"
+    compression: gzip
+    encoding:
+      codec: json
+    framing:
+      method: newline_delimited
+    batch:
+      max_bytes: 1048576
+      timeout_secs: 2
+    # Holds logs on disk while the endpoint is unreachable, then pauses reading rather than dropping them
+    buffer:
+      type: disk
+      max_size: 536870912
+      when_full: block

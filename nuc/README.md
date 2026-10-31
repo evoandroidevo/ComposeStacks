@@ -10,6 +10,7 @@ This folder contains the Docker Compose stacks for services and supporting infra
 - [forgejo](forgejo): Forgejo stack configuration.
 - [glances](glances): Glance dashboard
 - [proxy](proxy): reverse proxy and ingress stack built around Caddy and Cloudflare Tunnel.
+- [vector](vector): ships this host's Docker logs to VictoriaLogs.
 - [wiki](wiki): LeafWiki stack.
 
 ## Supporting folders
