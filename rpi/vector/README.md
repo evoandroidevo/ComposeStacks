@@ -44,7 +44,7 @@ Query VictoriaLogs from this host. Each query should return recent lines:
 
 ```bash
 curl -s http://localhost:8427/vl/select/logsql/query -d 'query=_time:5m host:rpi-docker | limit 5'
-curl -s http://localhost:8427/vl/select/logsql/query -d 'query=_time:5m host:rpi | limit 5'
+curl -s http://localhost:8427/vl/select/logsql/query -d 'query=_time:5m host:="rpi" | limit 5'
 ```
 
 ## Log fields
