@@ -97,10 +97,25 @@ transforms:
           else { l }
       }
       if .level == null { del(.level) }
+  # The proxy's Caddyfile sets message_key to _msg. Logs with an error field already use it as the message
+  shape_caddy:
+    type: remap
+    inputs:
+      - shape_docker
+    source: |
+      if .stack == "proxy" && .service == "caddy" {
+        parsed = object(parse_json(string(.message) ?? "") ?? null) ?? {}
+        if is_string(parsed._msg) && parsed.error == null { .message = parsed._msg }
+
+        # Clients can send credentials in the query string, which the field name filter can't see
+        if .level == "access" {
+          .uri = replace(string(.uri) ?? "", r'(?i)([?&](?:api_?key|access_?token|token|auth|password|secret)=)[^&]*', "$1[redacted]")
+        }
+      }
   drop_empty:
     type: filter
     inputs:
-      - shape_docker
+      - shape_caddy
     condition: 'strip_whitespace(string(.message) ?? "") != ""'
   # Lines too frequent to be worth storing
   drop_noise:
