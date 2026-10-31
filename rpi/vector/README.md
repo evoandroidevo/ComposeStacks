@@ -23,19 +23,13 @@ Related setups:
 
 ## Journal location
 
-Check which directory holds the journal:
+The Raspberry Pi's journal is not persistent, so the stack reads `/run/log/journal` by default. Logs still ship, but anything not yet sent is lost on reboot.
+
+If you enable persistent storage, set `JOURNAL_DIR=/var/log/journal` in the stack's environment. To check where the journal is:
 
 ```bash
-ls -d /var/log/journal /run/log/journal
+journalctl --header | grep -m1 'File path'
 ```
-
-The stack reads `/var/log/journal` by default. If only `/run/log/journal` exists, the journal is not persistent, so set this in a `.env` file next to `compose.yaml`:
-
-```bash
-JOURNAL_DIR=/run/log/journal
-```
-
-Logs still ship with a volatile journal, but anything not yet sent is lost on reboot. If `/var/log/journal` appears later, for example after enabling persistent storage, remove the override.
 
 ## Start the stack
 

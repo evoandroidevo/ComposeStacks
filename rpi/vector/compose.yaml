@@ -63,8 +63,8 @@ services:
       - ./config/vector/vector.yaml:/etc/vector/vector.yaml:ro
       - secrets-store-vector:/run/secrets/locket:ro
       - vector-data:/var/lib/vector
-      # Use /run/log/journal if the host journal is not persistent, see README
-      - ${JOURNAL_DIR:-/var/log/journal}:/journal:ro
+      # This host's journal is not persistent, see README
+      - ${JOURNAL_DIR:-/run/log/journal}:/journal:ro
       - /etc/machine-id:/etc/machine-id:ro
 
 secrets:
