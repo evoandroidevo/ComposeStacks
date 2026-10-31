@@ -97,38 +97,46 @@ transforms:
           else { l }
       }
       if .level == null { del(.level) }
-  # The proxy's Caddyfile sets message_key to _msg. Logs with an error field already use it as the message
-  shape_caddy:
-    type: remap
+  # Sends apps that need their own handling to the steps below. Everything else goes through split._unmatched
+  split:
+    type: route
     inputs:
       - shape_docker
+    route:
+      caddy: '.stack == "proxy" && .service == "caddy"'
+      lldap: '.service == "lldap"'
+  # The proxy's Caddyfile sets message_key to _msg. Logs with an error field already use it as the message
+  caddy_fix:
+    type: remap
+    inputs:
+      - split.caddy
     source: |
-      if .stack == "proxy" && .service == "caddy" {
-        parsed = object(parse_json(string(.message) ?? "") ?? null) ?? {}
-        if is_string(parsed._msg) && parsed.error == null { .message = parsed._msg }
+      parsed = object(parse_json(string(.message) ?? "") ?? null) ?? {}
+      if is_string(parsed._msg) && parsed.error == null { .message = parsed._msg }
 
-        # Clients can send credentials in the query string, which the field name filter can't see
-        if .level == "access" {
-          .uri = replace(string(.uri) ?? "", r'(?i)([?&](?:api_?key|access_?token|token|auth|password|secret)=)[^&]*', "$1[redacted]")
-        }
+      # Clients can send credentials in the query string, which the field name filter can't see
+      if .level == "access" {
+        .uri = replace(string(.uri) ?? "", r'(?i)([?&](?:api_?key|access_?token|token|auth|password|secret)=)[^&]*', "$1[redacted]")
       }
+  # Session lines are too frequent to be worth storing
+  lldap_fix:
+    type: filter
+    inputs:
+      - split.lldap
+    condition: '!match(string(.message) ?? "", r''LDAP session (start|end)\b'')'
   drop_empty:
     type: filter
     inputs:
-      - shape_caddy
+      - caddy_fix
+      - lldap_fix
+      - split._unmatched
     condition: 'strip_whitespace(string(.message) ?? "") != ""'
-  # Lines too frequent to be worth storing
-  drop_noise:
-    type: filter
-    inputs:
-      - drop_empty
-    condition: '!(.service == "lldap" && match(string(.message) ?? "", r''LDAP session (start|end)\b''))'
 
 sinks:
   to_victorialogs:
     type: http
     inputs:
-      - drop_noise
+      - drop_empty
     # Caddy routes the vector user to /insert/jsonline. Keep _stream_fields low cardinality
     uri: "SECRET[locket.vector_endpoint]/?_msg_field=message&_time_field=timestamp&_stream_fields=host,stack,service"
     auth:
