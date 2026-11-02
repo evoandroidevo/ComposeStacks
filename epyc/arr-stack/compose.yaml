@@ -91,8 +91,8 @@ services:
       - TZ=America/Chicago
       - RADARR__SERVER__URLBASE=/radarr
       - RADARR__SERVER__BINDADDRESS=0.0.0.0
-      - RADARR__AUTH__METHOD=Forms
-      - RADARR__AUTH__REQUIRED=DisabledForLocalAddresses
+      #- RADARR__AUTH__METHOD=Forms
+      #- RADARR__AUTH__REQUIRED=DisabledForLocalAddresses
       - SECRETS_FILE=/run/secrets/radarr/.env
     volumes:
       - radarr-arrstack:/config
