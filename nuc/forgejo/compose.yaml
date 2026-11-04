@@ -22,10 +22,12 @@ services:
       # Every file in ./config/forgejo is a template with an op:// reference,
       # one secret per file so both postgres (*_FILE) and forgejo (__FILE) can read them directly.
       - "--map=/forgejo:/run/secrets/locket/forgejo"
+      - "--map=/postgres:/run/secrets/locket/postgres"
     secrets:
       - op_token
     volumes:
       - ./config/forgejo:/forgejo:ro
+      - ./config/postgres:/postgres:ro
       - secrets-store-forgejo:/run/secrets/locket
       - mount-to-prevent-anon-volumes-forgejo:/templates
 
@@ -39,9 +41,9 @@ services:
     # The postgres image reads *_FILE natively, no init.sh wrapper needed.
     # The entrypoint reads these as root before dropping to the postgres user.
     environment:
-      POSTGRES_USER_FILE: /run/secrets/forgejo/database_user
-      POSTGRES_PASSWORD_FILE: /run/secrets/forgejo/database_password
-      POSTGRES_DB_FILE: /run/secrets/forgejo/database_name
+      POSTGRES_USER_FILE: /run/secrets/postgres/database_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres/database_password
+      POSTGRES_DB_FILE: /run/secrets/postgres/database_name
       TZ: America/Chicago
     expose:
       - 5432
@@ -52,10 +54,10 @@ services:
         target: /var/lib/postgresql
       - type: volume
         source: secrets-store-forgejo
-        target: /run/secrets/forgejo
+        target: /run/secrets/postgres
         read_only: true
         volume:
-          subpath: forgejo
+          subpath: postgres
     healthcheck:
       # -h forces TCP so the temporary socket-only server during first init doesn't count as ready
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432"]
@@ -84,9 +86,9 @@ services:
       FORGEJO__database__DB_TYPE: postgres
       FORGEJO__database__HOST: forgejo-db:5432
       # Secrets, environment-to-ini reads __FILE values into app.ini on every start
-      FORGEJO__database__NAME__FILE: /run/secrets/forgejo/database_name
-      FORGEJO__database__USER__FILE: /run/secrets/forgejo/database_user
-      FORGEJO__database__PASSWD__FILE: /run/secrets/forgejo/database_password
+      FORGEJO__database__NAME__FILE: /run/secrets/postgres/database_name
+      FORGEJO__database__USER__FILE: /run/secrets/postgres/database_user
+      FORGEJO__database__PASSWD__FILE: /run/secrets/postgres/database_password
       FORGEJO__security__SECRET_KEY__FILE: /run/secrets/forgejo/secret_key
       FORGEJO__security__INTERNAL_TOKEN__FILE: /run/secrets/forgejo/internal_token
       FORGEJO__oauth2__JWT_SECRET__FILE: /run/secrets/forgejo/jwt_secret
@@ -94,10 +96,9 @@ services:
       - type: volume
         source: git-data
         target: /var/lib/gitea
-      # rootless image keeps app.ini here, without it config is lost on recreate
       - type: volume
         source: forgejo-config
-        target: /etc/gitea
+        target: /etc/gitea # rootless image keeps app.ini here, without it config is lost on recreate
       - /etc/localtime:/etc/localtime:ro
       - type: volume
         source: secrets-store-forgejo
@@ -105,6 +106,12 @@ services:
         read_only: true
         volume:
           subpath: forgejo
+      - type: volume
+        source: secrets-store-forgejo
+        target: /run/secrets/postgres
+        read_only: true
+        volume:
+          subpath: postgres
     networks:
       - default
       - proxy
