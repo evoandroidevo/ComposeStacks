@@ -96,6 +96,8 @@ services:
       - type: volume
         source: git-data
         target: /var/lib/gitea
+        volume:
+          nocopy: true # empty nfs chown permission fix
       - type: volume
         source: forgejo-config
         target: /etc/gitea # rootless image keeps app.ini here, without it config is lost on recreate
@@ -140,6 +142,10 @@ volumes:
     driver: local
   git-data:
     driver: local
+    driver_opts:
+      type: nfs
+      o: "addr=192.168.1.21,rw,sync,nfsvers=4,nolock,hard"
+      device: ":/mnt/thehub/Data/Code/forgjo-data"
   forgejo-config:
     driver: local
   forgejo-db-data:
