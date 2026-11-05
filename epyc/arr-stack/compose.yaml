@@ -135,7 +135,7 @@ services:
       - 9696:9696
 
   qbittorrent:
-    image: ghcr.io/linuxserver/qbittorrent:latest
+    image: ghcr.io/linuxserver/qbittorrent:5.2.4_v2.0.15-ls481
     container_name: qbittorrent
     user: "101000:101000"
     restart: unless-stopped
