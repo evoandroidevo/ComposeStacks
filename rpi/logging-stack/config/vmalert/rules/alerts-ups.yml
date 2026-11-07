@@ -1,0 +1,89 @@
+# UPS alerts from the SNMP metrics scraped by the `ups` job (UPS-MIB and Eaton XUPS-MIB)
+groups:
+  - name: ups
+    interval: 30s
+    rules:
+      - alert: UpsOnBattery
+        expr: upsOutputSource{job="ups"} == 5
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "UPS {{ $labels.instance }} is on battery"
+          description: >
+            The UPS has lost mains power and is running on battery.
+
+      - alert: UpsLowRuntime
+        expr: upsEstimatedMinutesRemaining{job="ups"} < 10
+        labels:
+          severity: critical
+        annotations:
+          summary: "UPS {{ $labels.instance }} has {{ $value }} minutes of runtime left"
+          description: >
+            Estimated battery runtime is under 10 minutes.
+
+      - alert: UpsOutputNotProtected
+        expr: xupsOutputStatus{job="ups"} != 3
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "UPS {{ $labels.instance }} output is not protected"
+          description: >
+            xupsOutputStatus is {{ $value }} (3 is protected). The UPS may be on bypass, have a battery fault,
+            or have an internal failure, so a power cut would drop the load.
+
+      - alert: UpsBatteryUnhealthy
+        expr: |
+          xupsBatteryStatus{job="ups"} != 1
+            or xupsBatteryFailure{job="ups"} == 1
+            or xupsBatteryAged{job="ups"} == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "UPS {{ $labels.instance }} battery needs attention"
+          description: >
+            The battery is reporting a warning or critical status, a fault or failed test, or that it is over aged.
+            Check the Battery section of the UPS dashboard.
+
+      - alert: UpsOutletGroupOff
+        expr: xupsRecepStatus{job="ups"} != 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "UPS {{ $labels.instance }} outlet group {{ $labels.xupsRecepIndex }} is not on"
+          description: >
+            Outlet group {{ $labels.xupsRecepIndex }} has status {{ $value }} (1 is on), so the devices on it may have lost power.
+
+      - alert: UpsHighLoad
+        expr: max by (instance) (upsOutputPercentLoad{job="ups"}) > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "UPS {{ $labels.instance }} load is {{ $value }}%"
+          description: >
+            Load has been over 80% for 10 minutes, which shortens battery runtime and risks an overload.
+
+      - alert: UpsHotAmbient
+        expr: xupsEnvAmbientTemp{job="ups"} > 35
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "UPS {{ $labels.instance }} ambient temperature is {{ $value }}°C"
+          description: >
+            The air around the UPS has been over 35°C for 15 minutes. Heat shortens battery life.
+
+      - alert: UpsMonitoringDown
+        expr: up{job="ups"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Can't read UPS {{ $labels.instance }} over SNMP"
+          description: >
+            The SNMP scrape has failed for 5 minutes, so the other UPS alerts can't fire.
+            Check `docker compose logs snmp-exporter` for a timeout or login error.

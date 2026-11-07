@@ -164,8 +164,8 @@ services:
     volumes:
       - ./config/vmalert/rules/alerts-vlogs.yml:/etc/alerts/vlogs.yml
       - ./config/vmalert/rules/alerts-health.yml:/etc/alerts/alerts-health.yml
-      # vlogs rule
-      - ./config/vmalert/vlogs-example-alerts.yml:/etc/alerts/vlogs-example-alerts.yml
+      - ./config/vmalert/rules/alerts-ups.yml:/etc/alerts/alerts-ups.yml
+      - ./config/vmalert/rules/alerts-logs.yml:/etc/alerts/alerts-logs.yml
     command:
       # it evaluates data against VictoriaMetrics and VictoriaLogs
       # caddy routes queries to corresponding datasource based on API path

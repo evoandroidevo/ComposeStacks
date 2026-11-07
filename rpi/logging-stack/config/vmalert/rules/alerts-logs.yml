@@ -1,0 +1,80 @@
+# Alerts from the logs shipped by Vector. Field names follow the Vector configs:
+# containers use host, stack and service, the Pi journal uses service, and the Proxmox journal uses app
+groups:
+  - name: logs
+    type: vlogs
+    interval: 1m
+    rules:
+      - alert: ServiceErrorSpike
+        # Authelia logs failed logins as errors, AutheliaFailedLogins covers those
+        expr: '_time:5m level:in(error,fatal) !(service:="authelia" "Unsuccessful") | stats by (host, service) count() as errors | filter errors:>10'
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.service }} on {{ $labels.host }} logged {{ $value }} errors in 5 minutes"
+          description: >
+            More than 10 error or fatal lines in the last 5 minutes.
+
+      - alert: AutheliaFailedLogins
+        # The message is "Unsuccessful 1FA authentication attempt by user 'NAME'", extract pulls NAME into the user field
+        expr: >-
+          _time:10m service:="authelia" "Unsuccessful"
+          | extract "by user '<user>'"
+          | stats by (remote_ip, user) count() as failures
+          | filter failures:>5
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value }} failed Authelia logins for {{ $labels.user }} from {{ $labels.remote_ip }} in 10 minutes"
+          description: >
+            More than 5 unsuccessful 1FA or 2FA attempts for user {{ $labels.user }} from {{ $labels.remote_ip }} in the last 10 minutes.
+
+      # Catches one address trying many usernames, which stays under the per-user threshold above
+      - alert: AutheliaFailedLoginsFromIp
+        expr: >-
+          _time:10m service:="authelia" "Unsuccessful"
+          | stats by (remote_ip) count() as failures
+          | filter failures:>10
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value }} failed Authelia logins from {{ $labels.remote_ip }} in 10 minutes"
+          description: >
+            More than 10 unsuccessful 1FA or 2FA attempts from {{ $labels.remote_ip }} across all usernames in the last 10 minutes.
+
+      - alert: SshFailedLogins
+        expr: '_time:10m source:="journald" (service:~"^sshd" or app:~"^sshd") ("Failed password" or "Invalid user") | stats by (host) count() as failures | filter failures:>10'
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value }} failed SSH logins on {{ $labels.host }} in 10 minutes"
+          description: >
+            More than 10 failed passwords or unknown usernames in the last 10 minutes.
+
+      # Jellyfin logs "Authentication request for "NAME" has been denied (IP: "ADDR")." at info level
+      - alert: JellyfinFailedLogins
+        expr: >-
+          _time:10m service:="jellyfin" "has been denied"
+          | extract `Authentication request for "<user>" has been denied (IP: "<ip>")`
+          | stats by (host, ip, user) count() as failures
+          | filter failures:>5
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value }} failed Jellyfin logins for {{ $labels.user }} from {{ $labels.ip }} in 10 minutes"
+          description: >
+            More than 5 denied logins for user {{ $labels.user }} from {{ $labels.ip }} on {{ $labels.host }} in the last 10 minutes.
+
+      # Catches one address trying many usernames, which stays under the per-user threshold above
+      - alert: JellyfinFailedLoginsFromIp
+        expr: >-
+          _time:10m service:="jellyfin" "has been denied"
+          | extract `has been denied (IP: "<ip>")`
+          | stats by (host, ip) count() as failures
+          | filter failures:>10
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value }} failed Jellyfin logins from {{ $labels.ip }} in 10 minutes"
+          description: >
+            More than 10 denied logins from {{ $labels.ip }} across all usernames on {{ $labels.host }} in the last 10 minutes.
