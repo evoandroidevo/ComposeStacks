@@ -59,8 +59,10 @@ services:
         volume:
           subpath: postgres
     healthcheck:
-      # -h forces TCP so the temporary socket-only server during first init doesn't count as ready
-      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432"]
+      # -h forces TCP so the temporary socket-only server during first init doesn't count as ready.
+      # -U and -d come from the secret files, without them pg_isready connects as root and postgres
+      # logs 'role "root" does not exist' on every check
+      test: ["CMD-SHELL", 'pg_isready -h 127.0.0.1 -p 5432 -U "$$(cat /run/secrets/postgres/database_user)" -d "$$(cat /run/secrets/postgres/database_name)"']
       interval: 10s
       retries: 5
       start_period: 30s
