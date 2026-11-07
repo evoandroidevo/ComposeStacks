@@ -830,7 +830,9 @@
             "lineWidth": 1,
             "fillOpacity": 10,
             "showPoints": "never"
-          }
+          },
+          "min": 50,
+          "max": 75
         },
         "overrides": []
       },
@@ -892,9 +894,9 @@
       }
     },
     {
-      "id": 15,
+      "id": 16,
       "type": "row",
-      "title": "Power cost ($rate \u00a2/kWh)",
+      "title": "Power groups",
       "collapsed": false,
       "gridPos": {
         "x": 0,
@@ -905,7 +907,788 @@
       "panels": []
     },
     {
-      "id": 16,
+      "id": 15,
+      "type": "stat",
+      "title": "Group status",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 37,
+        "w": 6,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "xupsRecepStatus{job=\"ups\", instance=~\"$instance\"}",
+          "legendFormat": "Group {{xupsRecepIndex}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "On",
+                  "color": "green",
+                  "index": 0
+                },
+                "2": {
+                  "text": "Off",
+                  "color": "red",
+                  "index": 1
+                },
+                "3": {
+                  "text": "Turning off",
+                  "color": "orange",
+                  "index": 2
+                },
+                "4": {
+                  "text": "Turning on",
+                  "color": "orange",
+                  "index": 3
+                },
+                "5": {
+                  "text": "Unknown",
+                  "color": "orange",
+                  "index": 4
+                },
+                "7": {
+                  "text": "Failed closed",
+                  "color": "red",
+                  "index": 5
+                },
+                "8": {
+                  "text": "Failed open",
+                  "color": "red",
+                  "index": 6
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 17,
+      "type": "timeseries",
+      "title": "Group load",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 37,
+        "w": 9,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "xupsRecepPercentLoad{job=\"ups\", instance=~\"$instance\"}",
+          "legendFormat": "Group {{xupsRecepIndex}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never"
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 18,
+      "type": "timeseries",
+      "title": "Group energy, last hour (Wh, about the average watts)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 15,
+        "y": 37,
+        "w": 9,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "xupsRecepHourlyPowerUsage{job=\"ups\", instance=~\"$instance\"}",
+          "legendFormat": "Group {{xupsRecepIndex}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watth",
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never"
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 19,
+      "type": "row",
+      "title": "Battery and environment",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 45,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 20,
+      "type": "stat",
+      "title": "Charger state",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 46,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "xupsBatteryAbmStatus{job=\"ups\", instance=~\"$instance\"}",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "Charging",
+                  "color": "blue",
+                  "index": 0
+                },
+                "2": {
+                  "text": "Discharging",
+                  "color": "red",
+                  "index": 1
+                },
+                "3": {
+                  "text": "Floating",
+                  "color": "green",
+                  "index": 2
+                },
+                "4": {
+                  "text": "Resting",
+                  "color": "green",
+                  "index": 3
+                },
+                "5": {
+                  "text": "Unknown",
+                  "color": "orange",
+                  "index": 4
+                },
+                "6": {
+                  "text": "Disconnected",
+                  "color": "red",
+                  "index": 5
+                },
+                "7": {
+                  "text": "Under test",
+                  "color": "orange",
+                  "index": 6
+                },
+                "8": {
+                  "text": "Check battery",
+                  "color": "red",
+                  "index": 7
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 21,
+      "type": "stat",
+      "title": "Battery health",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 4,
+        "y": 46,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "xupsBatteryStatus{job=\"ups\", instance=~\"$instance\"}",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Unknown",
+                  "color": "orange",
+                  "index": 0
+                },
+                "1": {
+                  "text": "Good",
+                  "color": "green",
+                  "index": 1
+                },
+                "2": {
+                  "text": "Warning",
+                  "color": "orange",
+                  "index": 2
+                },
+                "3": {
+                  "text": "Critical",
+                  "color": "red",
+                  "index": 3
+                },
+                "4": {
+                  "text": "Bootloader",
+                  "color": "orange",
+                  "index": 4
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 22,
+      "type": "stat",
+      "title": "Battery fault",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 46,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "xupsBatteryFailure{job=\"ups\", instance=~\"$instance\"}",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "Yes",
+                  "color": "red",
+                  "index": 0
+                },
+                "2": {
+                  "text": "No",
+                  "color": "green",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 23,
+      "type": "stat",
+      "title": "Battery aged",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 46,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "xupsBatteryAged{job=\"ups\", instance=~\"$instance\"}",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "Yes",
+                  "color": "red",
+                  "index": 0
+                },
+                "2": {
+                  "text": "No",
+                  "color": "green",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 24,
+      "type": "stat",
+      "title": "Low capacity",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 46,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "xupsBatteryLowCapacity{job=\"ups\", instance=~\"$instance\"}",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "Yes",
+                  "color": "red",
+                  "index": 0
+                },
+                "2": {
+                  "text": "No",
+                  "color": "green",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 25,
+      "type": "stat",
+      "title": "Ambient temperature",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 20,
+        "y": 46,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "xupsEnvAmbientTemp{job=\"ups\", instance=~\"$instance\"}",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 35
+              },
+              {
+                "color": "red",
+                "value": 40
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 26,
+      "type": "timeseries",
+      "title": "Ambient temperature",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 50,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "xupsEnvAmbientTemp{job=\"ups\", instance=~\"$instance\"}",
+          "legendFormat": "ambient",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 27,
+      "type": "timeseries",
+      "title": "Real and apparent power",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 50,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "xupsOutputTotalWatts{job=\"ups\", instance=~\"$instance\"}",
+          "legendFormat": "W",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "xupsOutputTotalVA{job=\"ups\", instance=~\"$instance\"}",
+          "legendFormat": "VA",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never"
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 28,
+      "type": "row",
+      "title": "Power cost ($rate \u00a2/kWh)",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 58,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 29,
       "type": "stat",
       "title": "Energy, last 24 h",
       "datasource": {
@@ -914,7 +1697,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 37,
+        "y": 59,
         "w": 6,
         "h": 4
       },
@@ -924,7 +1707,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum by (instance) (avg_over_time(upsOutputPower{job=\"ups\", instance=~\"$instance\"}[24h])) * 24 / 1000",
+          "expr": "sum by (instance) (increase(xupsOutputCumulativePowerUsage{job=\"ups\", instance=~\"$instance\"}[24h])) / 1000",
           "legendFormat": "",
           "refId": "A"
         }
@@ -961,7 +1744,7 @@
       }
     },
     {
-      "id": 17,
+      "id": 30,
       "type": "stat",
       "title": "Cost, last 24 h",
       "datasource": {
@@ -970,7 +1753,7 @@
       },
       "gridPos": {
         "x": 6,
-        "y": 37,
+        "y": 59,
         "w": 6,
         "h": 4
       },
@@ -980,7 +1763,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum by (instance) (avg_over_time(upsOutputPower{job=\"ups\", instance=~\"$instance\"}[24h])) * 24 / 1000 * $rate / 100",
+          "expr": "sum by (instance) (increase(xupsOutputCumulativePowerUsage{job=\"ups\", instance=~\"$instance\"}[24h])) / 1000 * $rate / 100",
           "legendFormat": "",
           "refId": "A"
         }
@@ -1017,7 +1800,7 @@
       }
     },
     {
-      "id": 18,
+      "id": 31,
       "type": "stat",
       "title": "Estimated cost per month",
       "datasource": {
@@ -1026,7 +1809,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 37,
+        "y": 59,
         "w": 6,
         "h": 4
       },
@@ -1036,7 +1819,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum by (instance) (avg_over_time(upsOutputPower{job=\"ups\", instance=~\"$instance\"}[24h])) * 24 / 1000 * $rate / 100 * 30",
+          "expr": "sum by (instance) (increase(xupsOutputCumulativePowerUsage{job=\"ups\", instance=~\"$instance\"}[24h])) / 1000 * $rate / 100 * 30",
           "legendFormat": "",
           "refId": "A"
         }
@@ -1073,7 +1856,7 @@
       }
     },
     {
-      "id": 19,
+      "id": 32,
       "type": "stat",
       "title": "Estimated cost per year",
       "datasource": {
@@ -1082,7 +1865,7 @@
       },
       "gridPos": {
         "x": 18,
-        "y": 37,
+        "y": 59,
         "w": 6,
         "h": 4
       },
@@ -1092,7 +1875,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum by (instance) (avg_over_time(upsOutputPower{job=\"ups\", instance=~\"$instance\"}[24h])) * 24 / 1000 * $rate / 100 * 365",
+          "expr": "sum by (instance) (increase(xupsOutputCumulativePowerUsage{job=\"ups\", instance=~\"$instance\"}[24h])) / 1000 * $rate / 100 * 365",
           "legendFormat": "",
           "refId": "A"
         }
@@ -1129,7 +1912,7 @@
       }
     },
     {
-      "id": 20,
+      "id": 33,
       "type": "timeseries",
       "title": "Daily cost, last 30 days",
       "datasource": {
@@ -1138,8 +1921,8 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 41,
-        "w": 24,
+        "y": 63,
+        "w": 12,
         "h": 8
       },
       "targets": [
@@ -1148,8 +1931,60 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum by (instance) (avg_over_time(upsOutputPower{job=\"ups\", instance=~\"$instance\"}[1d])) * 24 / 1000 * $rate / 100",
+          "expr": "sum by (instance) (increase(xupsOutputCumulativePowerUsage{job=\"ups\", instance=~\"$instance\"}[1d])) / 1000 * $rate / 100",
           "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 80,
+            "showPoints": "never",
+            "drawStyle": "bars",
+            "barAlignment": -1
+          },
+          "min": 0,
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "interval": "1d",
+      "timeFrom": "30d"
+    },
+    {
+      "id": 34,
+      "type": "timeseries",
+      "title": "Daily cost by group, last 30 days",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 63,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "avg_over_time(xupsRecepHourlyPowerUsage{job=\"ups\", instance=~\"$instance\"}[1d]) * 24 / 1000 * $rate / 100",
+          "legendFormat": "Group {{xupsRecepIndex}}",
           "refId": "A"
         }
       ],

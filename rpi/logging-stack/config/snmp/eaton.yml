@@ -1,0 +1,113 @@
+# Eaton XUPS-MIB (1.3.6.1.4.1.534.1) objects that the standard UPS MIB doesn't cover.
+# Only objects the Network-M2/M3 card on the 9PX returns are listed. Units follow the MIB
+modules:
+  eaton_xups:
+    walk:
+      - 1.3.6.1.4.1.534.1.2
+      - 1.3.6.1.4.1.534.1.4
+      - 1.3.6.1.4.1.534.1.6.1
+      - 1.3.6.1.4.1.534.1.12
+    metrics:
+      - name: xupsBatTimeRemaining
+        oid: 1.3.6.1.4.1.534.1.2.1
+        type: gauge
+        help: Battery run time in seconds before the UPS turns off due to low battery
+      - name: xupsBatteryAbmStatus
+        oid: 1.3.6.1.4.1.534.1.2.5
+        type: gauge
+        help: Advanced Battery Management state
+        enum_values:
+          1: batteryCharging
+          2: batteryDischarging
+          3: batteryFloating
+          4: batteryResting
+          5: unknown
+          6: batteryDisconnected
+          7: batteryUnderTest
+          8: checkBattery
+      - name: xupsBatteryFailure
+        oid: 1.3.6.1.4.1.534.1.2.7
+        type: gauge
+        help: Battery fault detected or battery test failed, 1 is yes and 2 is no
+      - name: xupsBatteryAged
+        oid: 1.3.6.1.4.1.534.1.2.9
+        type: gauge
+        help: Battery is over aged, 1 is yes and 2 is no
+      - name: xupsBatteryLowCapacity
+        oid: 1.3.6.1.4.1.534.1.2.10
+        type: gauge
+        help: Battery capacity is below the UPS threshold, 1 is yes and 2 is no
+      - name: xupsBatteryStatus
+        oid: 1.3.6.1.4.1.534.1.2.11
+        type: gauge
+        help: Battery health
+        enum_values:
+          0: batteryUnknown
+          1: batteryGood
+          2: batteryWarning
+          3: batteryCritical
+          4: batteryNotOperand
+      - name: xupsOutputHourlyPowerUsage
+        oid: 1.3.6.1.4.1.534.1.4.6
+        type: gauge
+        help: Output energy consumed during the last hour in Wh
+      - name: xupsOutputCumulativePowerUsage
+        oid: 1.3.6.1.4.1.534.1.4.7
+        type: gauge
+        help: Output energy consumed since the last reset in Wh
+      - name: xupsOutputTotalWatts
+        oid: 1.3.6.1.4.1.534.1.4.9.3
+        type: gauge
+        help: Output active power in watts
+      - name: xupsOutputTotalVA
+        oid: 1.3.6.1.4.1.534.1.4.9.4
+        type: gauge
+        help: Output apparent power in VA
+      - name: xupsOutputAveragePowerFactor
+        oid: 1.3.6.1.4.1.534.1.4.9.5
+        type: gauge
+        help: Output power factor in hundredths
+      - name: xupsOutputStatus
+        oid: 1.3.6.1.4.1.534.1.4.10
+        type: gauge
+        help: AC output status
+        enum_values:
+          0: unknown
+          1: outputNotPowered
+          2: outputNotProtected
+          3: outputProtected
+          4: outputPoweredNoContinuity
+      - name: xupsEnvAmbientTemp
+        oid: 1.3.6.1.4.1.534.1.6.1
+        type: gauge
+        help: Ambient temperature near the UPS in degrees Celsius
+      - name: xupsRecepStatus
+        oid: 1.3.6.1.4.1.534.1.12.2.1.2
+        type: gauge
+        help: Outlet group status
+        indexes:
+          - labelname: xupsRecepIndex
+            type: gauge
+        enum_values:
+          1: "on"
+          2: "off"
+          3: pendingOff
+          4: pendingOn
+          5: unknown
+          6: reserved
+          7: failedClosed
+          8: failedOpen
+      - name: xupsRecepHourlyPowerUsage
+        oid: 1.3.6.1.4.1.534.1.12.2.1.8
+        type: gauge
+        help: Outlet group energy consumed during the last hour in Wh
+        indexes:
+          - labelname: xupsRecepIndex
+            type: gauge
+      - name: xupsRecepPercentLoad
+        oid: 1.3.6.1.4.1.534.1.12.2.1.11
+        type: gauge
+        help: Outlet group load in percent of the UPS rated capacity
+        indexes:
+          - labelname: xupsRecepIndex
+            type: gauge

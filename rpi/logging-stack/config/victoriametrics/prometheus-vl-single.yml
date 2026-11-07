@@ -20,7 +20,7 @@ scrape_configs:
   scrape_timeout: 20s
   metrics_path: /snmp
   params:
-    module: [ups_mib]
+    module: [ups_mib, eaton_xups]
     auth: [ups_v3]
   static_configs:
   - targets:

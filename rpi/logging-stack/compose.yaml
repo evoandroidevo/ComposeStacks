@@ -74,7 +74,7 @@ services:
     restart: always
 
   # Polls the UPS network card over SNMPv3 when VictoriaMetrics scrapes it.
-  # The bundled snmp.yml provides the modules, auth.yml adds the credentials
+  # The bundled snmp.yml provides ups_mib, eaton.yml adds eaton_xups, and auth.yml adds the credentials
   snmp-exporter:
     image: prom/snmp-exporter:v0.31.0
     depends_on:
@@ -83,6 +83,7 @@ services:
     command:
       - "--config.file=/etc/snmp_exporter/snmp.yml"
       - "--config.file=/etc/snmp_exporter/auth/auth.yml"
+      - "--config.file=/etc/snmp_exporter/auth/eaton.yml"
     expose:
       - 9116
     volumes:

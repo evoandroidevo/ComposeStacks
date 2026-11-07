@@ -113,7 +113,7 @@ When you change a password, update its hash and run `docker compose up -d --forc
 
 ## UPS metrics
 
-VictoriaMetrics scrapes the UPS network card at `192.168.1.215` every 30 seconds through `snmp-exporter`, using the standard UPS MIB (`ups_mib`). The **UPS** dashboard in Grafana shows the results.
+VictoriaMetrics scrapes the UPS network card at `192.168.1.215` every 30 seconds through `snmp-exporter`, using two modules: the standard UPS MIB (`ups_mib`, bundled with the exporter) and Eaton's XUPS-MIB (`eaton_xups`, in [eaton.yml](config/snmp/eaton.yml)). The Eaton module adds the outlet groups, the card's energy counter, ambient temperature, and battery health. The **UPS** dashboard in Grafana shows the results, and its power cost panels use the energy counter.
 
 The card needs an SNMPv3 user with authentication and privacy, matching the `snmp_*` fields in 1Password. [auth.yml](config/snmp/auth.yml) uses `SHA512` authentication and `AES256` privacy, matching the card. The passwords can't contain `"` or `\`.
 
