@@ -10,7 +10,7 @@ Status: current production, as confirmed on 2026-09-19. Administrative web acces
 - VictoriaLogs for storing and querying logs
 - VictoriaMetrics for storing and querying metrics
 - Caddy as the entry point to the stack, controlling access and routing requests to the Victoria products and Grafana
-- vmalert and Alertmanager for alert evaluation and routing; notification delivery is not configured
+- vmalert and Alertmanager for alert evaluation and routing, with notifications sent to Discord
 - locket for injecting runtime secrets from 1Password
 
 ## Services
@@ -21,7 +21,7 @@ Status: current production, as confirmed on 2026-09-19. Administrative web acces
 - caddy: published on port 8427, enforces access and routes requests to the appropriate backend based on the request path
 - vmalert: evaluates alerting and recording rules
 - snmp-exporter: polls the UPS network card over SNMPv3 when VictoriaMetrics scrapes it
-- alertmanager: handles alert notifications
+- alertmanager: groups alerts and sends notifications to a Discord channel
 - locket: injects secrets from 1Password into the stack at runtime
 
 ## Requirements
@@ -31,7 +31,7 @@ Status: current production, as confirmed on 2026-09-19. Administrative web acces
 - Configuration files present under ./config/
 - An external Docker network named `proxy`; internal services use the project's default network
 - Valid secret values for Grafana domain settings in your 1Password store
-- These fields in `DockerSecrets/logging-stack`: `docker_user`, `docker_password_hash`, `vector_user`, `vector_password_hash`, `grafana_proxy_secret`, `snmp_username`, `snmp_auth_password`, and `snmp_priv_password`. Locket fails if any are missing, see [generating password hashes](#generating-password-hashes)
+- These fields in `DockerSecrets/logging-stack`: `docker_user`, `docker_password_hash`, `vector_user`, `vector_password_hash`, `grafana_proxy_secret`, `snmp_username`, `snmp_auth_password`, `snmp_priv_password`, and `discord_webhook`. Locket fails if any are missing, see [generating password hashes](#generating-password-hashes)
 
 ## Directory layout
 
@@ -138,7 +138,7 @@ If it's `0`, `docker compose logs snmp-exporter` shows the SNMP error.
 - Grafana connects to these backends using the provisioned datasource configuration
 - Caddy routes outside requests and vmalert's queries to the right Victoria backend. Grafana connects to the backends directly
 - vmalert evaluates rules and sends alerts to Alertmanager
-- Alertmanager currently routes everything to a `blackhole` receiver with no notification destination. [TODO] Configure and test the intended delivery channel.
+- Alertmanager sends alerts to the Discord webhook in `discord_webhook`, grouped by alert name and source, with a reminder every 4 hours while an alert is still firing and a message when it resolves. A critical alert suppresses a warning with the same name and source. See [alertmanager.yml](config/alertmanager/alertmanager.yml).
 
 ## Useful maintenance commands
 

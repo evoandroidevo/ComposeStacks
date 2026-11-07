@@ -20,6 +20,7 @@ services:
       - "--op-token=file:/run/secrets/op_token"
       - "--secret=grafana_domain={{ op://DockerSecrets/logging-stack/grafana-domain }}"
       - "--secret=grafana_domain_base={{ op://DockerSecrets/logging-stack/grafana-domain-base }}"
+      - "--secret=discord_webhook={{ op://DockerSecrets/logging-stack/discord_webhook }}"
       - "--map=/caddy:/run/secrets/locket/caddy"
       - "--map=/snmp:/run/secrets/locket/snmp"
     secrets:
@@ -185,8 +186,17 @@ services:
   # and distributes them according to --config.file.
   alertmanager:
     image: prom/alertmanager:v0.34.2
+    depends_on:
+      locket:
+        condition: service_healthy
     volumes:
       - ./config/alertmanager/alertmanager.yml:/config/alertmanager.yml
+      - type: volume
+        source: secrets-store-logs
+        target: /run/secrets/discord_webhook
+        read_only: true
+        volume:
+          subpath: discord_webhook
     command:
       - "--config.file=/config/alertmanager.yml"
     expose:
