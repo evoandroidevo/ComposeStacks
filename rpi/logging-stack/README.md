@@ -105,7 +105,7 @@ curl -s -o /dev/null -w '%{http_code}\n' http://<rpi-lan-ip>:8427/vl/select/logs
 Caddy stores bcrypt hashes rather than passwords. Clients keep sending the plaintext `vector_password` and `docker_password`. Generate each hash by entering the password at the prompt, then save the output to the matching `_hash` field:
 
 ```bash
-docker run --rm -it caddy:2.11.7-alpine caddy hash-password
+docker run --rm -it caddy:2.11.9-alpine caddy hash-password
 ```
 
 When you change a password, update its hash and run `docker compose up -d --force-recreate locket caddy`.

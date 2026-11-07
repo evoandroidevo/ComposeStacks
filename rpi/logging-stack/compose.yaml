@@ -31,7 +31,7 @@ services:
 
   # Grafana instance configured with VictoriaLogs as datasource
   grafana:
-    image: grafana/grafana:12.4.5
+    image: grafana/grafana:12.4.14
     depends_on:
       locket:
         condition: service_healthy
@@ -73,7 +73,7 @@ services:
   #  VictoriaLogs instance, a single process responsible for
   #  storing logs and serving read queries.
   victorialogs:
-    image: victoriametrics/victoria-logs:v1.51.0
+    image: victoriametrics/victoria-logs:v1.53.0
     expose:
       - 9428
     command:
@@ -87,7 +87,7 @@ services:
   # VictoriaMetrics instance, a single process responsible for
   # scraping, storing metrics and serve read requests.
   victoriametrics:
-    image: victoriametrics/victoria-metrics:v1.146.0
+    image: victoriametrics/victoria-metrics:v1.155.0
     expose:
       - 8428
     volumes:
@@ -102,7 +102,7 @@ services:
   # Caddy is the only way into the stack from outside. Writes need a login, reads are
   # limited by source IP, and it routes to VictoriaMetrics or VictoriaLogs by path.
   caddy:
-    image: caddy:2.11.7-alpine
+    image: caddy:2.11.9-alpine
     depends_on:
       locket:
         condition: service_healthy
@@ -129,7 +129,7 @@ services:
 
   # vmalert executes alerting and recording rules according to the given rule type.
   vmalert:
-    image: victoriametrics/vmalert:v1.146.0
+    image: victoriametrics/vmalert:v1.155.0
     depends_on:
       - "caddy"
       - "alertmanager"
@@ -159,7 +159,7 @@ services:
   # alertmanager receives alerting notifications from vmalert
   # and distributes them according to --config.file.
   alertmanager:
-    image: prom/alertmanager:v0.33.0
+    image: prom/alertmanager:v0.34.2
     volumes:
       - ./config/alertmanager/alertmanager.yml:/config/alertmanager.yml
     command:
