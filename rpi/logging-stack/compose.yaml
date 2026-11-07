@@ -157,12 +157,30 @@ services:
   vmalert:
     image: victoriametrics/vmalert:v1.155.0
     depends_on:
-      - "caddy"
-      - "alertmanager"
-      - "victoriametrics"
+      locket:
+        condition: service_healthy
+      caddy:
+        condition: service_started
+      alertmanager:
+        condition: service_started
+      victoriametrics:
+        condition: service_started
+    # vmalert can't read --external.url from a file, so the shell reads Grafana's root URL from locket
+    # and passes it in. The trailing slash is dropped because vmalert adds one before the alert source
+    entrypoint:
+      - /bin/sh
+      - -c
+      - 'url="$$(cat /run/secrets/grafana_domain_base)" && exec /vmalert-prod --external.url="$${url%/}" "$$@"'
+      - vmalert
     expose:
       - 8880
     volumes:
+      - type: volume
+        source: secrets-store-logs
+        target: /run/secrets/grafana_domain_base
+        read_only: true
+        volume:
+          subpath: grafana_domain_base
       - ./config/vmalert/rules/alerts-vlogs.yml:/etc/alerts/vlogs.yml
       - ./config/vmalert/rules/alerts-health.yml:/etc/alerts/alerts-health.yml
       - ./config/vmalert/rules/alerts-ups.yml:/etc/alerts/alerts-ups.yml
@@ -177,9 +195,10 @@ services:
       - "--remoteRead.url=http://victoriametrics:8428/"
       - "--notifier.url=http://alertmanager:9093/"
       - "--rule=/etc/alerts/*.yml"
-      # display source of alerts in grafana
-      - "--external.url=http://grafana:3000" #grafana outside container
-      - '--external.alert.source=explore?orgId=1&left={"datasource":"{{ if eq .Type "vlogs" }}VictoriaLogs{{ else }}VictoriaMetrics{{ end }}","queries":[{"expr":{{.Expr|jsonEscape|queryEscape}},"refId":"A"}],"range":{"from":"{{ .ActiveAt.UnixMilli }}","to":"now"}}'
+      # Alert source links open the rule's query in Grafana Explore, through the NUC's Caddy and Authelia.
+      # --external.url is set by the entrypoint above. The whole left value is URL-encoded so chat apps don't cut the link at a quote or brace.
+      # $$ is a literal $ for the template, Compose would read a single $ as a variable
+      - '--external.alert.source={{ $$ds := "VictoriaMetrics" }}{{ if eq .Type "vlogs" }}{{ $$ds = "VictoriaLogs" }}{{ end }}explore?orgId=1&left={{ printf `{"datasource":"%s","queries":[{"expr":%s,"refId":"A"}],"range":{"from":"%d","to":"now"}}` $$ds (.Expr | jsonEscape) .ActiveAt.UnixMilli | queryEscape }}'
     restart: always
 
   # alertmanager receives alerting notifications from vmalert
