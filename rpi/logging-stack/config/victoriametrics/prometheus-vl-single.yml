@@ -14,3 +14,21 @@ scrape_configs:
   static_configs:
   - targets:
     - victorialogs:9428
+# The UPS network card, polled through snmp-exporter. The target is the card, the scrape goes to the exporter
+- job_name: ups
+  scrape_interval: 30s
+  scrape_timeout: 20s
+  metrics_path: /snmp
+  params:
+    module: [ups_mib]
+    auth: [ups_v3]
+  static_configs:
+  - targets:
+    - 192.168.1.215
+  relabel_configs:
+  - source_labels: [__address__]
+    target_label: __param_target
+  - source_labels: [__param_target]
+    target_label: instance
+  - target_label: __address__
+    replacement: snmp-exporter:9116

@@ -21,11 +21,13 @@ services:
       - "--secret=grafana_domain={{ op://DockerSecrets/logging-stack/grafana-domain }}"
       - "--secret=grafana_domain_base={{ op://DockerSecrets/logging-stack/grafana-domain-base }}"
       - "--map=/caddy:/run/secrets/locket/caddy"
+      - "--map=/snmp:/run/secrets/locket/snmp"
     secrets:
       - op_token
     volumes:
       # Mount in your actual secret templates, with secret references
       - ./config/caddy:/caddy:ro
+      - ./config/snmp:/snmp:ro
       # Mount in your output directory, where you want secrets materialized
       - secrets-store-logs:/run/secrets/locket
 
@@ -60,6 +62,7 @@ services:
       - ./config/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
       - ./config/grafana/dashboards/victorialogs.json:/var/lib/grafana/dashboards/victorialogs.json
       - ./config/grafana/dashboards/victorialogs-internal.json:/var/lib/grafana/dashboards/victorialogs-internal.json
+      - ./config/grafana/dashboards/ups.json:/var/lib/grafana/dashboards/ups.json
     environment:
       - "GF_INSTALL_PLUGINS=victoriametrics-logs-datasource"
       - "GF_SERVER_DOMAIN__FILE=/run/secrets/grafana_domain"
@@ -68,6 +71,27 @@ services:
       - "GF_AUTH_DISABLE_LOGIN_FORM=true"
       - "GF_AUTH_ANONYMOUS_ENABLED=true"
       - "GF_AUTH_ANONYMOUS_ORG_ROLE=Admin"
+    restart: always
+
+  # Polls the UPS network card over SNMPv3 when VictoriaMetrics scrapes it.
+  # The bundled snmp.yml provides the modules, auth.yml adds the credentials
+  snmp-exporter:
+    image: prom/snmp-exporter:v0.31.0
+    depends_on:
+      locket:
+        condition: service_healthy
+    command:
+      - "--config.file=/etc/snmp_exporter/snmp.yml"
+      - "--config.file=/etc/snmp_exporter/auth/auth.yml"
+    expose:
+      - 9116
+    volumes:
+      - type: volume
+        source: secrets-store-logs
+        target: /etc/snmp_exporter/auth
+        read_only: true
+        volume:
+          subpath: snmp
     restart: always
 
   #  VictoriaLogs instance, a single process responsible for

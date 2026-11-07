@@ -20,6 +20,7 @@ Status: current production, as confirmed on 2026-09-19. Administrative web acces
 - victoriametrics: stores and serves metrics internally on port 8428
 - caddy: published on port 8427, enforces access and routes requests to the appropriate backend based on the request path
 - vmalert: evaluates alerting and recording rules
+- snmp-exporter: polls the UPS network card over SNMPv3 when VictoriaMetrics scrapes it
 - alertmanager: handles alert notifications
 - locket: injects secrets from 1Password into the stack at runtime
 
@@ -30,7 +31,7 @@ Status: current production, as confirmed on 2026-09-19. Administrative web acces
 - Configuration files present under ./config/
 - An external Docker network named `proxy`; internal services use the project's default network
 - Valid secret values for Grafana domain settings in your 1Password store
-- These fields in `DockerSecrets/logging-stack`: `docker_user`, `docker_password_hash`, `vector_user`, `vector_password_hash`, and `grafana_proxy_secret`. Locket fails if any are missing, see [generating password hashes](#generating-password-hashes)
+- These fields in `DockerSecrets/logging-stack`: `docker_user`, `docker_password_hash`, `vector_user`, `vector_password_hash`, `grafana_proxy_secret`, `snmp_username`, `snmp_auth_password`, and `snmp_priv_password`. Locket fails if any are missing, see [generating password hashes](#generating-password-hashes)
 
 ## Directory layout
 
@@ -110,6 +111,20 @@ docker run --rm -it caddy:2.11.9-alpine caddy hash-password
 
 When you change a password, update its hash and run `docker compose up -d --force-recreate locket caddy`.
 
+## UPS metrics
+
+VictoriaMetrics scrapes the UPS network card at `192.168.1.215` every 30 seconds through `snmp-exporter`, using the standard UPS MIB (`ups_mib`). The **UPS** dashboard in Grafana shows the results.
+
+The card needs an SNMPv3 user with authentication and privacy, matching the `snmp_*` fields in 1Password. [auth.yml](config/snmp/auth.yml) uses `SHA512` authentication and `AES256` privacy, matching the card. The passwords can't contain `"` or `\`.
+
+To check the scrape works, run this on the Raspberry Pi. A value of `1` means the card answered, and `0` means the exporter returned an error, usually wrong credentials, protocols, or the card being unreachable:
+
+```bash
+curl -s http://localhost:8427/vm/api/v1/query --data-urlencode 'query=up{job="ups"}'
+```
+
+If it's `0`, `docker compose logs snmp-exporter` shows the SNMP error.
+
 ## Data and persistence
 
 - Grafana data is stored in the grafanadata volume
@@ -145,4 +160,4 @@ docker compose down
 - Secret values such as Grafana domain settings are loaded from the temporary secret store at runtime.
 - The stack depends on the external proxy Docker network.
 - The Docker and Jellyfin setup directories provide additional log shipping options for sending data into VictoriaLogs.
-- VictoriaMetrics currently scrapes itself, VictoriaLogs, and vmalert every 10 seconds. This does not establish monitoring coverage of every stack.
+- VictoriaMetrics currently scrapes itself, VictoriaLogs, and vmalert every 10 seconds, and the UPS every 30 seconds. This does not establish monitoring coverage of every stack.

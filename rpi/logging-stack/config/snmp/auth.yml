@@ -1,0 +1,12 @@
+# SNMPv3 credentials for the UPS network card, rendered by locket. The exporter's bundled snmp.yml supplies the modules.
+# The protocols must match the card's SNMPv3 user settings
+auths:
+  ups_v3:
+    version: 3
+    security_level: authPriv
+    username: "{{ op://DockerSecrets/logging-stack/snmp_username }}"
+    password: "{{ op://DockerSecrets/logging-stack/snmp_auth_password }}"
+    auth_protocol: SHA512
+    # If the exporter logs decryption errors, the card may use the other AES-256 variant, AES256C
+    priv_protocol: AES256
+    priv_password: "{{ op://DockerSecrets/logging-stack/snmp_priv_password }}"
