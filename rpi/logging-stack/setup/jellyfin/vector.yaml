@@ -1,0 +1,102 @@
+# Vector config for the Jellyfin host -> VictoriaLogs (via the logging stack's Caddy, as the vector user)
+# Install path: /etc/vector/vector.yaml
+# Credentials live in /etc/vector/secrets/ (one file per secret, see README)
+
+data_dir: /var/lib/vector
+
+secret:
+  vlogs:
+    type: directory
+    path: /etc/vector/secrets
+    remove_trailing_whitespace: true
+
+sources:
+  # jellyfinYYYYMMDD.log from the server, JellyfinEnhanced_YYYY-MM-DD.log from the Jellyfin Enhanced plugin
+  jellyfin_logs:
+    type: file
+    include:
+      - /var/log/jellyfin/jellyfin*.log
+      - /var/log/jellyfin/JellyfinEnhanced_*.log
+    ignore_older_secs: 86400
+    # Stack traces and multi-line values continue on lines that don't start with a timestamp
+    multiline:
+      start_pattern: '^\[\d{4}-\d{2}-\d{2} '
+      mode: halt_before
+      condition_pattern: '^\[\d{4}-\d{2}-\d{2} '
+      timeout_ms: 1000
+
+transforms:
+  # Server:  [YYYY-MM-DD HH:MM:SS.mmm -06:00] [INF] MESSAGE
+  # Plugin:  [YYYY-MM-DD HH:MM:SS] [INFO] [COMPONENT] MESSAGE
+  shape_jellyfin:
+    type: remap
+    inputs:
+      - jellyfin_logs
+    source: |
+      file = string(.file) ?? ""
+      .stack = "jellyfin"
+      .service = if contains(file, "JellyfinEnhanced") { "jellyfin-enhanced" } else { "jellyfin" }
+      .source = "file"
+      del(.file)
+      del(.source_type)
+
+      line = parse_regex(string(.message) ?? "", r'(?s)^\[(?P<time>[^\]]+)\]\s+\[(?P<level>[A-Z]+)\]\s+(?P<text>.*)$') ?? null
+      if line != null {
+        time = string!(line.time)
+        # The plugin's timestamps have no offset, so they're read in the server's time zone
+        parsed_time = parse_timestamp(time, "%Y-%m-%d %H:%M:%S%.3f %:z") ?? parse_timestamp(time, "%Y-%m-%d %H:%M:%S", timezone: "America/Chicago") ?? null
+        if parsed_time != null { .timestamp = parsed_time }
+
+        level = string!(line.level)
+        .level = if includes(["ERR", "ERROR"], level) { "error" }
+          else if includes(["WRN", "WARN", "WARNING"], level) { "warn" }
+          else if includes(["INF", "INFO"], level) { "info" }
+          else if includes(["DBG", "DEBUG"], level) { "debug" }
+          else if includes(["VRB", "VERBOSE", "TRACE"], level) { "trace" }
+          else if includes(["FTL", "FATAL", "CRT", "CRITICAL"], level) { "fatal" }
+          else { downcase(level) }
+
+        text = strip_whitespace(string!(line.text))
+        # The server repeats plugin messages wrapped in quotes
+        unquoted = parse_regex(text, r'(?s)^"(?P<inner>.*)"$') ?? null
+        if unquoted != null { text = string!(unquoted.inner) }
+
+        # A leading [Name] is the plugin or subsystem that logged the line
+        component = parse_regex(text, r'(?s)^\[(?P<name>[^\]:]+)\]\s*(?P<rest>.*)$') ?? null
+        if component != null {
+          .component = component.name
+          text = string!(component.rest)
+        }
+        .message = text
+      }
+
+  drop_empty:
+    type: filter
+    inputs:
+      - shape_jellyfin
+    condition: 'strip_whitespace(string(.message) ?? "") != ""'
+
+sinks:
+  victorialogs:
+    type: http
+    inputs:
+      - drop_empty
+    # Caddy routes the vector user to /insert/jsonline. Keep _stream_fields low cardinality
+    uri: "http://192.168.1.236:8427/?_msg_field=message&_time_field=timestamp&_stream_fields=host,stack,service"
+    auth:
+      strategy: basic
+      user: "SECRET[vlogs.vector_user]"
+      password: "SECRET[vlogs.vector_password]"
+    compression: gzip
+    encoding:
+      codec: json
+    framing:
+      method: newline_delimited
+    batch:
+      max_bytes: 1048576
+      timeout_secs: 2
+    # Holds logs on disk while the endpoint is unreachable, then pauses reading rather than dropping them
+    buffer:
+      type: disk
+      max_size: 536870912
+      when_full: block

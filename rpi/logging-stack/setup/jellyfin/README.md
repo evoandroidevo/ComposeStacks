@@ -1,71 +1,84 @@
-# Vector setup for Jellyfin logging
+# Jellyfin host logging
 
-This guide installs Vector on Debian-based Linux systems, copies the sample configuration into the correct location, and enables the Vector systemd service.
+Ships the Jellyfin server log and the Jellyfin Enhanced plugin log from `/var/log/jellyfin` to VictoriaLogs through the logging stack's Caddy. Vector runs as a native package on the Jellyfin host. Run these commands as root on that host.
 
 ## 1. Install Vector
 
-On Debian/Ubuntu, install the Vector package from the official repository.
-
 ```bash
-curl -1sLf 'https://repositories.timber.io/public/vector/cfg/setup/bash.deb.sh' \
-  | sudo -E bash
-
-sudo apt-get update
-sudo apt-get install -y vector
+bash -c "$(curl -L https://setup.vector.dev)"
+apt-get install -y vector
 ```
 
 ## 2. Copy the configuration
 
-Copy the sample configuration file into Vector's default config directory:
+The Jellyfin host doesn't have a copy of this repository, so run this from the repository root on another machine:
 
 ```bash
-sudo mkdir -p /etc/vector
-sudo cp /path/to/compose-stacks/local/logging-stack/setup/jellyfin/vector-config.yaml /etc/vector/vector.yaml
+scp rpi/logging-stack/setup/jellyfin/vector.yaml root@<jellyfin-ip>:/etc/vector/vector.yaml
 ```
 
-<details>
-  <summary>If you are already in the repository root, you can use:</summary>
+The config sends logs to `http://192.168.1.236:8427/`, which sends the credentials and logs unencrypted. `logs.*` is the HTTPS alternative, but it's behind Authelia, so it only works if Authelia lets this host through.
+
+## 3. Set the credentials
+
+Vector reads each credential from its own file in `/etc/vector/secrets`. Use the same `vector_user` and `vector_password` values as the other hosts. `read` keeps the values out of your shell history:
 
 ```bash
-sudo mkdir -p /etc/vector
-sudo cp ./local/logging-stack/setup/jellyfin/vector-config.yaml /etc/vector/vector.yaml
+install -d -o root -g vector -m 750 /etc/vector/secrets
+read -r VECTOR_USER
+read -rs VECTOR_PASSWORD
+printf '%s\n' "$VECTOR_USER" > /etc/vector/secrets/vector_user
+printf '%s\n' "$VECTOR_PASSWORD" > /etc/vector/secrets/vector_password
+unset VECTOR_USER VECTOR_PASSWORD
+chown root:vector /etc/vector/secrets/*
+chmod 640 /etc/vector/secrets/*
 ```
 
-</details>
-
-## 3. Validate the configuration
-
-Test the configuration before starting Vector:
+## 4. Check access to the logs
 
 ```bash
-vector validate --config /etc/vector/vector.yaml
+ls -ld /var/log/jellyfin
+runuser -u vector -- ls /var/log/jellyfin
 ```
 
-## 4. Enable and start the service
+If the second command fails, add the `vector` user to the directory's group, for example `usermod -aG jellyfin vector`, and run it again.
 
-Enable and start Vector with systemd:
+## 5. Validate and start
 
 ```bash
-sudo systemctl daemon-reload
-sudo systemctl enable vector
-sudo systemctl start vector
+runuser -u vector -- vector validate --no-environment --resolve-secrets /etc/vector/vector.yaml
+systemctl enable --now vector
+systemctl status vector
 ```
 
-Check the service status:
+To follow Vector's own logs:
 
 ```bash
-sudo systemctl status vector
+journalctl -u vector -f
 ```
 
-## 5. View logs
+## 6. Verify
 
-If needed, view Vector logs with:
+Run this on the Raspberry Pi. It should return recent lines:
 
 ```bash
-sudo journalctl -u vector -f
+curl -s http://localhost:8427/vl/select/logsql/query -d 'query=_time:5m stack:="jellyfin" | limit 5'
 ```
+
+## Log fields
+
+| Field | Server log | Plugin log |
+| --- | --- | --- |
+| `host` | Jellyfin host's hostname | Jellyfin host's hostname |
+| `stack` | `jellyfin` | `jellyfin` |
+| `service` | `jellyfin` | `jellyfin-enhanced` |
+| `level` | `INF`, `WRN`, `ERR` and so on, mapped to `info`, `warn`, `error` | `INFO`, `WARN`, `ERROR`, `DEBUG`, mapped the same way |
+| `component` | A leading `[Name]` in the message, such as `Jellycheckr` | The plugin feature, such as `TagCache` or `CDN` |
+
+`host`, `stack`, and `service` are the VictoriaLogs stream fields. Stack traces and other multi-line messages are kept together as one entry.
 
 ## Notes
 
-- Adjust the file paths in the config if your Jellyfin logs are stored somewhere other than `/var/log/jellyfin/`.
-- If you use a different config filename, update the service or command accordingly.
+- The plugin log has no time zone, so its timestamps are read as `America/Chicago`. Change `timezone` in `vector.yaml` if the server uses another zone.
+- The server repeats most plugin messages, so `INFO` and `WARN` plugin lines appear twice, once per `service`. The plugin log also has `DEBUG` lines the server log doesn't.
+- Upgrade with the host's normal `apt` updates. Vector is not pinned here, so review its release notes when it updates.
