@@ -29,7 +29,6 @@ This repository contains Docker Compose stacks for self-hosted services, grouped
 
 - [rpi/dockhand](rpi/dockhand): Dockhand UI with a Docker socket proxy and secret helpers
 - [rpi/logging-stack](rpi/logging-stack): Grafana, VictoriaLogs, VictoriaMetrics, and alerting tools
-- [rpi/nut](rpi/nut): Network UPS Tools stack
 - [rpi/ups](rpi/ups): PVE UPS stack
 - [rpi/vector](rpi/vector): Vector log shipping for Docker logs and the host journal
 

@@ -6,7 +6,6 @@ This folder contains the Docker Compose stacks for management, observability, an
 
 - [dockhand](dockhand): Docker management UI with a socket proxy and secret helper.
 - [logging-stack](logging-stack): observability stack for logs and metrics with Grafana, VictoriaLogs, VictoriaMetrics, Caddy, vmalert, and Alertmanager.
-- [nut](nut): Network UPS Tools stack.
 - [ups](ups): PVE UPS stack.
 - [vector](vector): ships this host's Docker logs and systemd journal to VictoriaLogs.
 
