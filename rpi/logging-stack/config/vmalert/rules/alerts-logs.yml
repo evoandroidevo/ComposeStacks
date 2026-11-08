@@ -8,9 +8,10 @@ groups:
       - alert: ServiceErrorSpike
         # Authelia logs failed logins as errors, AutheliaFailedLogins covers those. It also logs an error
         # when a proxied connection sends no request before its read timeout, which is harmless.
-        # cloudflared logs an error when a browser closes a streaming request, such as Forgejo's /user/events.
-        # It writes two lines, one with the text in the error field and one with it as the message
-        expr: '_time:5m level:in(error,fatal) !(service:="authelia" ("Unsuccessful" or "Request timeout occurred")) !(service:="cloudflare-tunnel" (error:"canceled by remote with error code 0" or "canceled by remote with error code 0")) | stats by (host, service) count() as errors | filter errors:>10'
+        # cloudflared logs an error when a browser cancels a request, such as closing Forgejo's /user/events
+        # stream or typing ahead of a Jellyfin search. It writes two lines, one with the text in the error
+        # field and one with it as the message
+        expr: '_time:5m level:in(error,fatal) !(service:="authelia" ("Unsuccessful" or "Request timeout occurred")) !(service:="cloudflare-tunnel" (error:"canceled by remote with error code 0" or "canceled by remote with error code 0" or error:"Incoming request ended abruptly: context canceled" or "Incoming request ended abruptly: context canceled")) | stats by (host, service) count() as errors | filter errors:>10'
         labels:
           severity: warning
         annotations:
