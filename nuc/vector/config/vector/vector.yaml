@@ -108,6 +108,7 @@ transforms:
       postgres: 'starts_with(string(.image) ?? "", "postgres:")'
       redis: 'starts_with(string(.image) ?? "", "redis:")'
       cloudflared: 'starts_with(string(.image) ?? "", "cloudflare/cloudflared:")'
+      forgejo: 'starts_with(string(.image) ?? "", "codeberg.org/forgejo/forgejo:")'
   # The proxy's Caddyfile sets message_key to _msg. Logs with an error field already use it as the message
   caddy_fix:
     type: remap
@@ -247,6 +248,47 @@ transforms:
           }
         }
       }
+  # Forgejo logs: YYYY/MM/DD HH:MM:SS CALLER [L] MESSAGE, where CALLER is file:line:function()
+  forgejo_fix:
+    type: remap
+    inputs:
+      - split.forgejo
+    source: |
+      line = parse_regex(string(.message) ?? "", r'(?s)^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}(?: (?P<caller>\S+))? \[(?P<level>[TDIWECF])\] (?P<text>.*)$') ?? null
+      if line != null {
+        level = string!(line.level)
+        .level = if level == "E" { "error" }
+          else if level == "W" { "warn" }
+          else if level == "I" { "info" }
+          else if level == "D" { "debug" }
+          else if level == "T" { "trace" }
+          else { "fatal" }
+        if line.caller != null { .caller = line.caller }
+        .message = line.text
+
+        # router: completed GET /PATH for IP:PORT, 200 OK in 240.5ms @ HANDLER
+        request = parse_regex(string!(.message), r'^router: (?P<state>completed|slow|polling|failed) (?P<method>[A-Z]+) (?P<path>\S+) for (?P<addr>\S+), (?P<status>\d{3}) (?P<status_text>.*?) in (?P<value>[\d.]+)(?P<unit>ns|µs|us|ms|s)(?: @ (?P<handler>.+))?$') ?? null
+        if request != null {
+          # Clients can send credentials in the query string, which the field name filter can't see
+          path = replace(string!(request.path), r'(?i)([?&](?:api_?key|access_?token|token|auth|password|secret)=)[^&]*', "$1[redacted]")
+          .method = request.method
+          .path = path
+          .status = to_int(request.status) ?? null
+          summary = string!(request.method) + " " + path + " " + string!(request.status) + " " + string!(request.status_text)
+          .message = if request.state == "completed" { summary } else { string!(request.state) + ": " + summary }
+          if request.handler != null { .handler = request.handler }
+          addr = parse_regex(string!(request.addr), r'^\[?(?P<ip>[^\]]+?)\]?:\d+$') ?? null
+          .remote_ip = if addr != null { addr.ip } else { request.addr }
+          value, err = to_float(request.value)
+          if err == null {
+            unit = string!(request.unit)
+            .duration_ms = if unit == "s" { value * 1000.0 }
+              else if unit == "ms" { value }
+              else if unit == "ns" { value / 1000000.0 }
+              else { value / 1000.0 }
+          }
+        }
+      }
   drop_empty:
     type: filter
     inputs:
@@ -255,6 +297,7 @@ transforms:
       - postgres_fix
       - redis_fix
       - cloudflared_fix
+      - forgejo_fix
       - split._unmatched
     condition: 'strip_whitespace(string(.message) ?? "") != ""'
 
