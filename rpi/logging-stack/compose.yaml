@@ -197,8 +197,11 @@ services:
       - "--rule=/etc/alerts/*.yml"
       # Alert source links open the rule's query in Grafana Explore, through the NUC's Caddy and Authelia.
       # --external.url is set by the entrypoint above. The whole left value is URL-encoded so chat apps don't cut the link at a quote or brace.
+      # Log rules count matches with _time and stats, which would show a count of the last 5 minutes before the click.
+      # For vlogs the link drops the leading _time filter and everything from | stats on, filters to the alert's labels,
+      # and starts 10 minutes before the alert went active so the lines that tripped it are in range.
       # $$ is a literal $ for the template, Compose would read a single $ as a variable
-      - '--external.alert.source={{ $$ds := "VictoriaMetrics" }}{{ if eq .Type "vlogs" }}{{ $$ds = "VictoriaLogs" }}{{ end }}explore?orgId=1&left={{ printf `{"datasource":"%s","queries":[{"expr":%s,"refId":"A"}],"range":{"from":"%d","to":"now"}}` $$ds (.Expr | jsonEscape) .ActiveAt.UnixMilli | queryEscape }}'
+      - '--external.alert.source={{ $$ds := "VictoriaMetrics" }}{{ $$q := .Expr }}{{ $$from := .ActiveAt.UnixMilli }}{{ if eq .Type "vlogs" }}{{ $$ds = "VictoriaLogs" }}{{ $$q = .Expr | reReplaceAll "^\\s*_time:\\S+\\s*" "" | reReplaceAll "\\s*\\|\\s*stats\\s.*$$" "" }}{{ range $$k, $$v := .Labels }}{{ if not (or (eq $$k "alertname") (eq $$k "alertgroup") (eq $$k "severity")) }}{{ $$q = printf "%s | filter %s:=%s" $$q $$k ($$v | jsonEscape) }}{{ end }}{{ end }}{{ $$from = (.ActiveAt.Add (parseDurationTime "-10m")).UnixMilli }}{{ end }}explore?orgId=1&left={{ printf `{"datasource":"%s","queries":[{"expr":%s,"refId":"A"}],"range":{"from":"%d","to":"now"}}` $$ds ($$q | jsonEscape) $$from | queryEscape }}'
     restart: always
 
   # alertmanager receives alerting notifications from vmalert
