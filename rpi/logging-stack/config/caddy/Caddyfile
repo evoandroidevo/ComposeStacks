@@ -33,7 +33,7 @@ http://:8427 {
 	# Reads need no login, but only these clients can make them. remote_ip is the TCP source so it can't be spoofed with headers
 	# 192.168.1.217 is the NUC, Caddy there serves logs.* behind Authelia
 	# 172.16.0.0/12 is containers and processes on this host
-	@denied not remote_ip 192.168.1.100 192.168.1.102 192.168.6.2 192.168.6.3 192.168.1.217 172.16.0.0/12
+	@denied not remote_ip 192.168.1.100 192.168.1.102 192.168.1.206 192.168.6.2 192.168.6.3 192.168.1.217 172.16.0.0/12
 	handle @denied {
 		respond 403
 	}
