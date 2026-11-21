@@ -295,10 +295,16 @@ transforms:
     inputs:
       - forgejo_fix
     condition: '!(includes(["127.0.0.1", "::1"], .remote_ip) && .path == "/api/healthz" && (to_int(.status) ?? 500) < 400)'
-  drop_empty:
+  # Forgejo Actions runners poll FetchTask every few seconds. Failed polls are kept
+  caddy_noise:
     type: filter
     inputs:
       - caddy_fix
+    condition: '!(.level == "access" && .hostname == "git.dyslexicevo.dev" && .uri == "/api/actions/runner.v1.RunnerService/FetchTask" && (to_int(.status) ?? 500) < 400)'
+  drop_empty:
+    type: filter
+    inputs:
+      - caddy_noise
       - lldap_noise
       - postgres_fix
       - redis_fix
