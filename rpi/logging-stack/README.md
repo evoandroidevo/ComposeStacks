@@ -101,6 +101,12 @@ After changing the network or Docker setup, confirm the allowlist still works by
 curl -s -o /dev/null -w '%{http_code}\n' http://<rpi-lan-ip>:8427/vl/select/logsql/query
 ```
 
+### Access logs
+
+Caddy writes an access log line for each request in the same shape as the [NUC proxy's](../../nuc/proxy), so Vector ships them as `service:caddy` with `level:access` and `client`, `hostname`, `uri`, and `status` fields. For `logs.*` requests, `client` is the real visitor from the NUC's `X-Forwarded-For`, not the NUC itself. Successful writes and requests from containers in this stack aren't logged, since shippers, vmalert, and Grafana make them constantly. Failed logins, `403`s, and reads from the LAN are.
+
+The `transform` log format needs a plugin, so the Caddy image is built locally. After changing the Caddy version in [compose.yaml](compose.yaml), rebuild it with `docker compose up -d --build caddy`.
+
 ### Generating password hashes
 
 Caddy stores bcrypt hashes rather than passwords. Clients keep sending the plaintext `vector_password` and `docker_password`. Generate each hash by entering the password at the prompt, then save the output to the matching `_hash` field:

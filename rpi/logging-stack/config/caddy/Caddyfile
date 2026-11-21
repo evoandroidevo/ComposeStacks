@@ -2,9 +2,25 @@
 	admin off
 	auto_https off
 	persist_config off
+	servers {
+		# The NUC's Caddy sets X-Forwarded-For to the real client for logs.*, so access logs show who it was
+		# Only affects the logged client, the remote_ip matchers below still check the TCP source
+		client_ip_headers X-Forwarded-For
+		trusted_proxies static 192.168.1.217
+	}
 }
 
 http://:8427 {
+	# Same fields as the NUC proxy's access logs, but the message key is msg because the Pi's Vector reads msg, not _msg
+	log access {
+		output stdout
+		format transform `\{"msg":"{request>method} {request>host} status={status} client={request>client_ip}", "level":"access", "client":"{request>client_ip}", "hostname":"{request>host}", "uri":"{request>uri}", "status":"{status}"}`
+	}
+
+	# vmalert and Grafana query from inside the stack every few seconds, logging them would bury everything else
+	@internal remote_ip 172.16.0.0/12
+	log_skip @internal
+
 	# Writes need a login. Requests with credentials never reach the read routes below
 	@ingest header Authorization *
 	handle @ingest {
@@ -13,8 +29,11 @@ http://:8427 {
 			{{ op://DockerSecrets/logging-stack/vector_user }} {{ op://DockerSecrets/logging-stack/vector_password_hash }}
 		}
 
+		# Successful writes aren't logged: every shipper posts constantly, and Vector would ship the line about its own post
+		# Failed logins still are, since log_skip only runs after basic_auth passes
 		@docker vars {http.auth.user.id} "{{ op://DockerSecrets/logging-stack/docker_user }}"
 		handle @docker {
+			log_skip
 			rewrite * /insert/loki/api/v1/push
 			reverse_proxy victorialogs:9428 {
 				header_up -Authorization
@@ -23,6 +42,7 @@ http://:8427 {
 
 		@vector vars {http.auth.user.id} "{{ op://DockerSecrets/logging-stack/vector_user }}"
 		handle @vector {
+			log_skip
 			rewrite * /insert/jsonline
 			reverse_proxy victorialogs:9428 {
 				header_up -Authorization

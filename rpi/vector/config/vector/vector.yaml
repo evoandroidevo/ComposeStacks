@@ -141,6 +141,16 @@ transforms:
     route:
       pve_ups: '.service == "pve-ups"'
       dockhand: '.service == "dockhand"'
+      caddy: '.service == "caddy"'
+  # The logging stack's Caddy access logs. Clients can send credentials in the query string, which the field name filter can't see
+  caddy_fix:
+    type: remap
+    inputs:
+      - split.caddy
+    source: |
+      if .level == "access" {
+        .uri = replace(string(.uri) ?? "", r'(?i)([?&](?:api_?key|access_?token|token|auth|password|secret)=)[^&]*', "$1[redacted]")
+      }
   # These logs already parse correctly, app-specific rules go here
   # Uvicorn logs: LEVEL:     MESSAGE, and access lines add client:port - "METHOD PATH HTTP/x" STATUS
   pve_ups_fix:
@@ -186,6 +196,7 @@ transforms:
   drop_empty:
     type: filter
     inputs:
+      - caddy_fix
       - dockhand_fix
       - pve_ups_noise
       - split._unmatched

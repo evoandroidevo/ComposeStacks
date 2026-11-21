@@ -128,7 +128,14 @@ services:
   # Caddy is the only way into the stack from outside. Writes need a login, reads are
   # limited by source IP, and it routes to VictoriaMetrics or VictoriaLogs by path.
   caddy:
-    image: caddy:2.11.9-alpine
+    # transform-encoder gives access logs the same shape as the NUC proxy's
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM caddy:2.11.9-builder-alpine AS builder
+        RUN xcaddy build --with github.com/caddyserver/transform-encoder
+        FROM caddy:2.11.9-alpine
+        COPY --from=builder /usr/bin/caddy /usr/bin/caddy
     depends_on:
       locket:
         condition: service_healthy
