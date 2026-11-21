@@ -27,16 +27,16 @@
         "name": "rate",
         "label": "Price (\u00a2/kWh)",
         "type": "textbox",
-        "query": "15",
+        "query": "21",
         "current": {
-          "text": "15",
-          "value": "15"
+          "text": "21",
+          "value": "21"
         },
         "options": [
           {
             "selected": true,
-            "text": "15",
-            "value": "15"
+            "text": "21",
+            "value": "21"
           }
         ],
         "hide": 0
