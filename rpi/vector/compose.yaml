@@ -26,22 +26,8 @@ services:
 
   # Limits Vector to the read-only Docker API endpoints that docker_logs needs
   socket-proxy:
-    image: lscr.io/linuxserver/socket-proxy:3.4.7
-    # The image's HAProxy config closes connections after 10 minutes without data. That cuts the
-    # log streams of quiet containers, and Vector resends their logs from when it started on every
-    # reconnect. This runs the image's docker-entrypoint.sh steps with longer client and server
-    # timeouts, and the grep stops the container if a new image version changes those lines
-    entrypoint:
-      - /bin/sh
-      - -c
-      - >-
-        mkdir -p /run/haproxy &&
-        sed -e 's/@@BIND_PROTO@@/[::]:2375 v4v6/'
-        -e 's/timeout client 10m/timeout client 7d/'
-        -e 's/timeout server 10m/timeout server 7d/'
-        /templates/haproxy.cfg > /run/haproxy/haproxy.cfg &&
-        grep -q 'timeout server 7d' /run/haproxy/haproxy.cfg &&
-        exec /usr/sbin/haproxy -f /run/haproxy/haproxy.cfg -W -db
+    # Pinned to the build, older 3.4.7 builds ignore TIMEOUT_CLIENT and TIMEOUT_SERVER without an error
+    image: lscr.io/linuxserver/socket-proxy:3.4.7-r0-ls106
     container_name: vector-socket-proxy
     restart: unless-stopped
     read_only: true
@@ -52,6 +38,11 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
+      # HAProxy closes connections after this many minutes without data, 10 by default. That cuts the
+      # log streams of quiet containers, and Vector resends their logs from when it started on every
+      # reconnect. 10080 is 7 days
+      - TIMEOUT_CLIENT=10080
+      - TIMEOUT_SERVER=10080
       - ALLOW_LOGS=1
       - CONTAINERS=1
       - EVENTS=1
