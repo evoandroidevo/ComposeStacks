@@ -289,6 +289,12 @@ transforms:
           }
         }
       }
+  # Successful health checks from inside the container are too frequent to be worth storing
+  forgejo_noise:
+    type: filter
+    inputs:
+      - forgejo_fix
+    condition: '!(includes(["127.0.0.1", "::1"], .remote_ip) && .path == "/api/healthz" && (to_int(.status) ?? 500) < 400)'
   drop_empty:
     type: filter
     inputs:
@@ -297,7 +303,7 @@ transforms:
       - postgres_fix
       - redis_fix
       - cloudflared_fix
-      - forgejo_fix
+      - forgejo_noise
       - split._unmatched
     condition: 'strip_whitespace(string(.message) ?? "") != ""'
 
