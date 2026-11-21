@@ -103,7 +103,7 @@ curl -s -o /dev/null -w '%{http_code}\n' http://<rpi-lan-ip>:8427/vl/select/logs
 
 ### Access logs
 
-Caddy writes an access log line for each request in the same shape as the [NUC proxy's](../../nuc/proxy), so Vector ships them as `service:caddy` with `level:access` and `client`, `hostname`, `uri`, and `status` fields. For `logs.*` requests, `client` is the real visitor from the NUC's `X-Forwarded-For`, not the NUC itself. Successful writes and requests from containers in this stack aren't logged, since shippers, vmalert, and Grafana make them constantly. Failed logins, `403`s, and reads from the LAN are.
+Caddy writes an access log line for each request in the same shape as the [NUC proxy's](../../nuc/proxy), so Vector ships them as `service:caddy` with `level:access` and `client`, `hostname`, `uri`, and `status` fields. For `logs.*` requests, `client` is the real visitor from the NUC's `X-Forwarded-For`, not the NUC itself. Successful writes and requests from containers in this stack aren't logged, since shippers, vmalert, and Grafana make them constantly. Failed logins, `403`s, and reads from the LAN are. Each `403` has a `reason` field, also added to the message, naming the check it failed: the read allowlist, the NUC's IP, a missing `X-Grafana-Proxy-Secret`, or a secret that doesn't match.
 
 The `transform` log format needs a plugin, so the Caddy image is built locally. After changing the Caddy version in [compose.yaml](compose.yaml), rebuild it with `docker compose up -d --build caddy`.
 

@@ -14,7 +14,7 @@ http://:8427 {
 	# Same fields as the NUC proxy's access logs, but the message key is msg because the Pi's Vector reads msg, not _msg
 	log access {
 		output stdout
-		format transform `\{"msg":"{request>method} {request>host} status={status} client={request>client_ip}", "level":"access", "client":"{request>client_ip}", "hostname":"{request>host}", "uri":"{request>uri}", "status":"{status}"}`
+		format transform `\{"msg":"{request>method} {request>host} status={status} client={request>client_ip}", "level":"access", "client":"{request>client_ip}", "hostname":"{request>host}", "uri":"{request>uri}", "status":"{status}", "reason":"{reason}"}`
 	}
 
 	# vmalert and Grafana query from inside the stack every few seconds, logging them would bury everything else
@@ -55,6 +55,7 @@ http://:8427 {
 	# 172.16.0.0/12 is containers and processes on this host
 	@denied not remote_ip 192.168.1.100 192.168.1.102 192.168.1.206 192.168.6.2 192.168.6.3 192.168.1.217 172.16.0.0/12
 	handle @denied {
+		log_append reason "source IP {remote_host} not on the read allowlist"
 		respond 403
 	}
 
@@ -112,8 +113,28 @@ http://:8427 {
 		}
 	}
 
+	# Everything below is a Grafana request that failed a check above. Each one logs which check it failed
+	@grafana_not_nuc {
+		path /grafana /grafana/*
+		not remote_ip 192.168.1.217
+	}
+	handle @grafana_not_nuc {
+		log_append reason "grafana: source IP {remote_host} is not the NUC"
+		respond 403
+	}
+
+	@grafana_no_secret {
+		path /grafana /grafana/*
+		not header X-Grafana-Proxy-Secret *
+	}
+	handle @grafana_no_secret {
+		log_append reason "grafana: no X-Grafana-Proxy-Secret header"
+		respond 403
+	}
+
 	@grafana_denied path /grafana /grafana/*
 	handle @grafana_denied {
+		log_append reason "grafana: X-Grafana-Proxy-Secret doesn't match"
 		respond 403
 	}
 

@@ -150,6 +150,14 @@ transforms:
     source: |
       if .level == "access" {
         .uri = replace(string(.uri) ?? "", r'(?i)([?&](?:api_?key|access_?token|token|auth|password|secret)=)[^&]*', "$1[redacted]")
+
+        # Caddy only sets reason when it refuses a request, the rest come through empty or as -
+        reason = strip_whitespace(string(.reason) ?? "")
+        if reason == "" || reason == "-" {
+          del(.reason)
+        } else {
+          .message = (string(.message) ?? "") + " reason=" + reason
+        }
       }
   # These logs already parse correctly, app-specific rules go here
   # Uvicorn logs: LEVEL:     MESSAGE, and access lines add client:port - "METHOD PATH HTTP/x" STATUS
